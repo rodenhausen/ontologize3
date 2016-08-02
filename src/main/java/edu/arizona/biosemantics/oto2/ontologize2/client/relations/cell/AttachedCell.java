@@ -37,6 +37,7 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.ICollectionService;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.ICollectionServiceAsync;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
@@ -70,6 +71,7 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 		this.eventBus = eventBus;
 		this.termsGrid = termsGrid;
 		this.i = i;
+		
 	}
 	
 	/**
@@ -85,8 +87,8 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
 				List<Vertex> targets = new LinkedList<Vertex>();
-				OntologyGraph graph = ModelController.getCollection().getGraph();
-				for(Relation r : graph.getOutRelations(relation.getDestination(), termsGrid.getType())) 
+				OntologyGraph g = termsGrid.getCollection().getGraph();
+				for(Relation r : g.getOutRelations(relation.getDestination(), termsGrid.getType())) 
 					targets.add(r.getDestination());
 				final MessageBox box = Alerter.showYesNoCancelConfirm("Remove relation", "You are about to remove the relation " + relation.toString() + ".\n" +
 						"Do you want to remove all children of " + relation.getDestination() + " or attach them instead to " + relation.getSource());
@@ -157,12 +159,16 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 	public void render(Context context, Row value, final SafeHtmlBuilder sb) {
 		if(value.getAttached().isEmpty() || value.getAttached().size() <= i)
 			return;
-		final Relation relation = value.getAttached().get(i);
+		final Relation r = value.getAttached().get(i);
 		String textColor = "#000000";
 		String backgroundColor = "";// "#FFFFFF";
-		switch(relation.getEdge().getSource()) {
+		OntologyGraph g = termsGrid.getCollection().getGraph();
+		if(g.getInRelations(r.getDestination(), r.getEdge().getType()).size() > 1) {
+			backgroundColor = "#ffff00";
+		}
+		switch(r.getEdge().getSource()) {
 			case IMPORT:
-				textColor = "#0033cc"; //blue
+				backgroundColor = "#0033cc"; //blue
 				break;
 			case USER:
 				break;
@@ -170,7 +176,7 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 				break;
 		}
 		SafeHtml rendered = templates.cell("", columnHeaderStyles.headInner(),
-				columnHeaderStyles.headButton(), relation.getDestination().getValue(), "", backgroundColor, 
+				columnHeaderStyles.headButton(), r.getDestination().getValue(), "", backgroundColor, 
 				"", textColor);
 		sb.append(rendered);
 	}

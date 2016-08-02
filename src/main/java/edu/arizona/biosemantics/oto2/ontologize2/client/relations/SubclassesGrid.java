@@ -85,10 +85,14 @@ public class SubclassesGrid extends MenuTermsGrid {
 	
 	protected void createRelation(Relation r) {
 		super.createRelation(r);
+		
+		OntologyGraph g = ModelController.getCollection().getGraph();
+		Vertex dest = r.getDestination();
+		Vertex src = r.getSource();
+		for(Row row : getAttachedRows(dest)) 
+			grid.getStore().update(row);
+		
 		if(r.getEdge().getType().equals(Type.PART_OF)) {
-			OntologyGraph g = ModelController.getCollection().getGraph();
-			Vertex dest = r.getDestination();
-			Vertex src = r.getSource();
 			String newValue = src + " " + dest;
 			
 			List<Relation> parentRelations = g.getInRelations(dest, Type.PART_OF);

@@ -82,6 +82,8 @@ public class TreeView extends SimpleContainer {
 	protected TreeGrid<VertexTreeNode> treeGrid;
 	
 	protected ToolBar buttonBar;
+
+	protected edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection collection;
 	
 	public TreeView(EventBus eventBus, Type type) {
 		this.eventBus = eventBus;
@@ -98,7 +100,7 @@ public class TreeView extends SimpleContainer {
 		
 		store = new TreeStore<VertexTreeNode>(vertexTreeNodeProperties.key());
 		ColumnConfig<VertexTreeNode, Vertex> valueCol = new ColumnConfig<VertexTreeNode, Vertex>(vertexTreeNodeProperties.vertex(), 300, "Tree");
-		valueCol.setCell(new VertexCell(type));
+		valueCol.setCell(new VertexCell(eventBus, this, type));
 		List<ColumnConfig<VertexTreeNode, ?>> list = new ArrayList<ColumnConfig<VertexTreeNode, ?>>();
 		list.add(valueCol);
 		ColumnModel<VertexTreeNode> cm = new ColumnModel<VertexTreeNode>(list);
@@ -145,6 +147,7 @@ public class TreeView extends SimpleContainer {
 		eventBus.addHandler(LoadCollectionEvent.TYPE, new LoadCollectionEvent.Handler() {
 			@Override
 			public void onLoad(LoadCollectionEvent event) {
+				TreeView.this.collection = event.getCollection();
 				OntologyGraph g = event.getCollection().getGraph();
 				Vertex root = g.getRoot(type);
 				createFromRoot(g, root);
@@ -263,6 +266,10 @@ public class TreeView extends SimpleContainer {
 	
 	protected Vertex getRoot() {
 		return treeGrid.getTreeStore().getRootItems().get(0).getVertex();
+	}
+
+	public edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection getCollection() {
+		return collection;
 	}
 	
 }

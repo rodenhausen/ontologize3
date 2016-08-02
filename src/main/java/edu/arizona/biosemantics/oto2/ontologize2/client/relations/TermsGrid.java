@@ -137,9 +137,9 @@ public class TermsGrid implements IsWidget {
 			return !this.attached.isEmpty();
 		}
 		
-		public boolean containsAttached(String target) {
+		public boolean containsAttached(Vertex v) {
 			for(Relation relation : attached) {
-				if(relation.getDestination().getValue().equals(target))
+				if(relation.getDestination().equals(v))
 					return true;
 			}
 			return false;
@@ -198,10 +198,12 @@ public class TermsGrid implements IsWidget {
 	private RowProperties rowProperties = GWT.create(RowProperties.class);
 	protected ListStore<Row> store;
 	protected Map<Vertex, Row> leadRowMap = new HashMap<Vertex, Row>();
+	//protected Map<Vertex, Set<Row>> vertexRowMap = new HashMap<Vertex, Set<Row>>();
 	protected Grid<Row> grid;
 	protected SimpleContainer createRowContainer;
 	private final int colWidth = 100;
 	protected Type type;
+	protected edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection collection;
 	
 	public TermsGrid(final EventBus eventBus, final Type type) {
 		this.eventBus = eventBus;
@@ -273,6 +275,7 @@ public class TermsGrid implements IsWidget {
 		eventBus.addHandler(LoadCollectionEvent.TYPE, new LoadCollectionEvent.Handler() {			
 			@Override
 			public void onLoad(LoadCollectionEvent event) {
+				TermsGrid.this.collection = event.getCollection();
 				clearGrid();
 				OntologyGraph g = event.getCollection().getGraph();
 				TermsGrid.this.onLoad(g);
@@ -304,6 +307,7 @@ public class TermsGrid implements IsWidget {
 	protected void clearGrid() {
 		store.clear();
 		leadRowMap.clear();
+		//vertexRowMap.clear();
 	}
 	
 	protected void onLoad(OntologyGraph g) {
@@ -312,6 +316,7 @@ public class TermsGrid implements IsWidget {
 		
 		createEdges(g, g.getRoot(type));
 	}
+	
 	protected void createEdges(OntologyGraph g, Vertex source) {
 		for(Relation r : g.getOutRelations(source, type)) {
 			createRelation(r);
@@ -351,8 +356,17 @@ public class TermsGrid implements IsWidget {
 	protected void addRow(Row row) {
 		store.add(row);
 		leadRowMap.put(row.getLead(), row);
+		/*(addVertexRowMap(row.getLead(), row);
+		for(Relation r : row.getAttached())
+			addVertexRowMap(r.getDestination(), row);*/
 	}
 		
+	/*private void addVertexRowMap(Vertex v, Row r) {
+		if(!vertexRowMap.containsKey(v))
+			vertexRowMap.put(v, new HashSet<Row>());
+		vertexRowMap.get(v).add(r);
+	}*/
+
 	protected void setRows(List<Row> rows) {
 		clearGrid();
 		for(Row row : rows) {
@@ -386,12 +400,23 @@ public class TermsGrid implements IsWidget {
 		}
 		store.remove(row);
 		leadRowMap.remove(row.getLead());
+		/*this.removeVertexRowMap(row.getLead(), row);
+		for(Relation r : row.getAttached())
+			this.removeVertexRowMap(r.getDestination(), row);*/
 	}
 	
+	/*private void removeVertexRowMap(Vertex v, Row r) {
+		if(vertexRowMap.containsKey(v))
+			vertexRowMap.get(v).remove(r);
+		if(vertexRowMap.get(v).isEmpty())
+			vertexRowMap.remove(v);
+	}*/
+
 	protected void addAttached(Row row, Relation... add) throws Exception {
 		row.add(Arrays.asList(add));
 		updateRow(row);
 		for(Relation r : add) {
+			//this.addVertexRowMap(r.getDestination(), row);
 			if(!leadRowMap.containsKey(r.getDestination())) {
 				Row addRow = new Row(r.getDestination());
 				this.addRow(addRow);
@@ -407,26 +432,6 @@ public class TermsGrid implements IsWidget {
 		removeRow(targetRow, recursive);
 	}
 	
-	protected void removeAttached(List<Row> rows, List<Candidate> remove) {
-		for(Row row : rows) {
-			for(Candidate c : remove) 
-				row.remove(c.getText());
-			updateRow(row);
-		}
-	}
-
-	/*public void removeCandidates(Candidate[] candidates) {
-		for(Candidate candidate : candidates) {
-			Vertex vertex = new Vertex(candidate.getText());
-			if(leadRowMap.containsKey(vertex)) {
-				Row row = leadRowMap.get(vertex);
-				this.removeRow(row, false);
-			}
-			List<Row> attachedTermRows = this.getAttachedRows(candidate.getText());
-			this.removeAttached(attachedTermRows, Arrays.asList(candidates));
-		}
-	}*/
-	
 	protected void updateRow(Row row) {
 		if(row.size() <= grid.getColumnModel().getColumnCount()) 
 			store.update(row);
@@ -436,11 +441,15 @@ public class TermsGrid implements IsWidget {
 		}
 	}
 	
-	protected List<Row> getAttachedRows(String term) {
+	protected List<Row> getAttachedRows(Vertex v) {
 		List<Row> result = new LinkedList<Row>();
-		for(Row row : this.store.getAll()) {
-			if(row.containsAttached(term))
-				result.add(row);
+		if(leadRowMap.containsKey(v))
+			result.add(leadRowMap.get(v));
+		OntologyGraph g = ModelController.getCollection().getGraph();
+		for(Relation inRelations : g.getInRelations(v, type)) {
+			if(leadRowMap.containsKey(inRelations.getSource())) {
+				result.add(leadRowMap.get(inRelations.getSource()));
+			}
 		}
 		return result;
 	}
@@ -576,5 +585,8 @@ public class TermsGrid implements IsWidget {
 		return type;
 	}	
 	
+	public edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection getCollection() {
+		return collection;
+	}
 
 }

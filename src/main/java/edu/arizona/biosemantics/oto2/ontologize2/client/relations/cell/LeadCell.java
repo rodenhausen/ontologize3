@@ -29,6 +29,7 @@ import com.sencha.gxt.widget.core.client.menu.MenuItem;
 
 import edu.arizona.biosemantics.oto2.ontologize2.client.Alerter;
 import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
@@ -74,7 +75,7 @@ public class LeadCell extends MenuExtendedCell<Vertex> {
 		removeItem.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
-				OntologyGraph g = ModelController.getCollection().getGraph();
+				OntologyGraph g = termsGrid.getCollection().getGraph();
 				Vertex targetVertex = row.getLead();
 				for(final Relation r : g.getInRelations(targetVertex, termsGrid.getType())) {
 					final MessageBox box = Alerter.showYesNoCancelConfirm("Remove relation", "You are about to remove the relation " + r.toString() + ".\n" +

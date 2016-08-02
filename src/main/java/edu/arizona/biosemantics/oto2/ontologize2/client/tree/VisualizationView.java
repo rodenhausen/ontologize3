@@ -19,12 +19,12 @@ public class VisualizationView extends SimpleContainer {
 		
 		SubclassTreeView subclassTree = new SubclassTreeView(eventBus);
 		PartsTreeView partsTree = new PartsTreeView(eventBus);
-		TreeView synonymsTree = new TreeView(eventBus, Type.SYNONYM_OF);
+		//TreeView synonymsTree = new TreeView(eventBus, Type.SYNONYM_OF);
 		
 		VerticalLayoutContainer vlc = new VerticalLayoutContainer();
 		vlc.add(subclassTree, new VerticalLayoutData(1, 0.5));
 		vlc.add(partsTree, new VerticalLayoutData(1, 0.5));
-		vlc.add(synonymsTree, new VerticalLayoutData(1, 0.33));
+		//vlc.add(synonymsTree, new VerticalLayoutData(1, 0.33));
 		this.setWidget(vlc);
 	}
 }

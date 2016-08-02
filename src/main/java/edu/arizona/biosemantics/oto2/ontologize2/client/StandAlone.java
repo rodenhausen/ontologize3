@@ -50,7 +50,7 @@ public class StandAlone implements EntryPoint {
 		final Vertex v2 = new Vertex("b");
 		try {
 			c.getGraph().addRelation(new Relation(c.getGraph().getRoot(Type.PART_OF), v1, new Edge(Type.PART_OF, Source.USER)));
-			c.getGraph().addRelation(new Relation(v1, v2, new Edge(Type.PART_OF, Source.USER)));
+			c.getGraph().addRelation(new Relation(v1, v2, new Edge(Type.PART_OF, Source.IMPORT)));
 			
 			collectionService.insert(c, new AsyncCallback<Collection>() {
 				@Override

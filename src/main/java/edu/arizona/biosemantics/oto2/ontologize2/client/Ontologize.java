@@ -22,6 +22,7 @@ import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
 
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.RelationsView;
 import edu.arizona.biosemantics.oto2.ontologize2.client.candidate.CandidateView;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.TreeView;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.VisualizationView;
 
