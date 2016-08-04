@@ -2,11 +2,14 @@ package edu.arizona.biosemantics.oto2.ontologize2.client.relations;
 
 import java.util.Arrays;
 
+import com.google.gwt.dom.client.Style.BorderStyle;
+import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.event.shared.GwtEvent;
 import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
 import com.sencha.gxt.widget.core.client.box.MessageBox;
+import com.sencha.gxt.widget.core.client.container.SimpleContainer;
 import com.sencha.gxt.widget.core.client.event.SelectEvent;
 import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
 
@@ -77,5 +80,23 @@ public class SynonymsGrid extends MenuTermsGrid {
 	protected void addAttached(Row row, Relation... add) throws Exception {
 		row.add(Arrays.asList(add));
 		updateRow(row);
+	}
+	
+	@Override
+	protected SimpleContainer createCreateRowContainer() {
+		createRowContainer = new SimpleContainer();
+		createRowContainer.setTitle("Drop here to create new preferred term");
+		com.google.gwt.user.client.ui.Label dropLabel = new com.google.gwt.user.client.ui.Label("Drop here to create new preferred term");
+		dropLabel.getElement().getStyle().setLineHeight(30, Unit.PX);
+		createRowContainer.setWidget(dropLabel);
+		createRowContainer.setHeight(30);
+		createRowContainer.getElement().getStyle().setBorderWidth(1, Unit.PX);
+		createRowContainer.getElement().getStyle().setBorderStyle(BorderStyle.DASHED);
+		createRowContainer.getElement().getStyle().setBorderColor("gray");
+		createRowContainer.getElement().getStyle().setProperty("mozMorderMadius", "7px");
+		createRowContainer.getElement().getStyle().setProperty("webkitBorderRadius", "7px");
+		createRowContainer.getElement().getStyle().setProperty("borderRadius", "7px");
+		createRowContainer.getElement().getStyle().setBackgroundColor("#ffffcc");
+		return createRowContainer;
 	}
 }

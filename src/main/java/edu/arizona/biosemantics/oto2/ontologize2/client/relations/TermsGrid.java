@@ -211,7 +211,7 @@ public class TermsGrid implements IsWidget {
 		store.setAutoCommit(true);
 		this.grid = new Grid<Row>(store, createColumnModel(new LinkedList<Row>()));
 		
-		createCreateRowContainer();
+		createRowContainer = createCreateRowContainer();
 
 		DropTarget dropTargetGrid = new DropTarget(grid);
 		dropTargetGrid.addDropHandler(new DndDropHandler() {
@@ -236,32 +236,34 @@ public class TermsGrid implements IsWidget {
 			}
 		});
 		dropTargetGrid.setOperation(Operation.COPY);
-		DropTarget dropTargetNewRow = new DropTarget(createRowContainer);
-		dropTargetNewRow.addDropHandler(new DndDropHandler() {
-			@Override
-			public void onDrop(DndDropEvent event) {
-				Candidate c = null;
-				if(event.getData() instanceof List<?>) {
-					List<?> list = (List<?>)event.getData();
-					if(list.size() == 1) {
-						Object item = list.get(0);
-						if(item instanceof Candidate)
-							c = (Candidate)item;
+		if(createRowContainer != null) {
+			DropTarget dropTargetNewRow = new DropTarget(createRowContainer);
+			dropTargetNewRow.addDropHandler(new DndDropHandler() {
+				@Override
+				public void onDrop(DndDropEvent event) {
+					Candidate c = null;
+					if(event.getData() instanceof List<?>) {
+						List<?> list = (List<?>)event.getData();
+						if(list.size() == 1) {
+							Object item = list.get(0);
+							if(item instanceof Candidate)
+								c = (Candidate)item;
+						}
+					}
+					
+					if(c != null) {
+						Vertex source = new Vertex(type.getRootLabel());
+						Vertex target = new Vertex(c.getText());
+						Relation relation = new Relation(source, target, new Edge(type, Source.USER));
+						CreateRelationEvent createRelationEvent = new CreateRelationEvent(relation);
+						fire(createRelationEvent);
+					} else {
+						Alerter.showAlert("Failed to create row", "Failed to create row");
 					}
 				}
-				
-				if(c != null) {
-					Vertex source = new Vertex(type.getRootLabel());
-					Vertex target = new Vertex(c.getText());
-					Relation relation = new Relation(source, target, new Edge(type, Source.USER));
-					CreateRelationEvent createRelationEvent = new CreateRelationEvent(relation);
-					fire(createRelationEvent);
-				} else {
-					Alerter.showAlert("Failed to create row", "Failed to create row");
-				}
-			}
-		});
-		dropTargetNewRow.setOperation(Operation.COPY);
+			});
+			dropTargetNewRow.setOperation(Operation.COPY);
+		}
 		
 		bindEvents();
 	}
@@ -561,7 +563,7 @@ public class TermsGrid implements IsWidget {
 		return maxRow.getAttachedCount();
 	}
 
-	private void createCreateRowContainer() {
+	protected SimpleContainer createCreateRowContainer() {
 		createRowContainer = new SimpleContainer();
 		createRowContainer.setTitle("Drop here to create new row");
 		com.google.gwt.user.client.ui.Label dropLabel = new com.google.gwt.user.client.ui.Label("Drop here to create new row");
@@ -575,13 +577,15 @@ public class TermsGrid implements IsWidget {
 		createRowContainer.getElement().getStyle().setProperty("webkitBorderRadius", "7px");
 		createRowContainer.getElement().getStyle().setProperty("borderRadius", "7px");
 		createRowContainer.getElement().getStyle().setBackgroundColor("#ffffcc");
+		return createRowContainer;
 	}
 
 	@Override
 	public Widget asWidget() {
 		VerticalLayoutContainer vlc = new VerticalLayoutContainer();
 		vlc.add(grid);
-		vlc.add(createRowContainer);
+		if(createRowContainer != null)
+			vlc.add(createRowContainer);
 		vlc.getScrollSupport().setScrollMode(ScrollMode.AUTO);
 		
 		SimpleContainer simpleContainer = new SimpleContainer();

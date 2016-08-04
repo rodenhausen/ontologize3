@@ -44,6 +44,7 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateCandidateEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveCandidateEvent;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.SelectTermEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.node.BucketTreeNode;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.node.CandidateTreeNode;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.node.TextTreeNode;
@@ -80,6 +81,12 @@ public class CandidateView extends SimpleContainer {
 		});
 		tree.getElement().setAttribute("source", "termsview");
 		tree.getSelectionModel().setSelectionMode(SelectionMode.MULTI);
+		tree.getSelectionModel().addSelectionHandler(new SelectionHandler<TextTreeNode>() {
+			@Override
+			public void onSelection(SelectionEvent<TextTreeNode> event) {
+				eventBus.fireEvent(new SelectTermEvent(event.getSelectedItem().getText()));
+			}
+		});
 		tree.setAutoExpand(true);
 		
 		TreeDragSource<TextTreeNode> dragSource = new TreeDragSource<TextTreeNode>(tree) {

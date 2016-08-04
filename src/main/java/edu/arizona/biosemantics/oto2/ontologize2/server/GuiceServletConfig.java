@@ -15,6 +15,7 @@ public class GuiceServletConfig extends GuiceServletContextListener {
 			@Override
 			protected void configureServlets() {
 				serve("/ontologize2/ontologize2_collection").with(CollectionService.class);
+				serve("/ontologize2/ontologize2_context").with(ContextService.class);
 			}
 			
 		}, new GuiceModule());

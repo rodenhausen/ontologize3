@@ -8,6 +8,7 @@ import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.event.shared.GwtEvent;
 import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
 import com.sencha.gxt.widget.core.client.box.MessageBox;
+import com.sencha.gxt.widget.core.client.container.SimpleContainer;
 import com.sencha.gxt.widget.core.client.event.SelectEvent;
 import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
 
@@ -112,5 +113,10 @@ public class SubclassesGrid extends MenuTermsGrid {
 			for(Row row : getAttachedRows(dest)) 
 				grid.getStore().update(row);
 		}
+	}
+	
+	@Override
+	protected SimpleContainer createCreateRowContainer() {
+		return null;
 	}
 }

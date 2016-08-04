@@ -13,9 +13,12 @@ import com.sencha.gxt.widget.core.client.container.Viewport;
 import com.google.gwt.event.shared.EventBus;
 
 import edu.arizona.biosemantics.common.biology.TaxonGroup;
+import edu.arizona.biosemantics.common.context.shared.Context;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.ICollectionService;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.ICollectionServiceAsync;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.IContextService;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.IContextServiceAsync;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Candidate;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
@@ -28,6 +31,7 @@ import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 public class StandAlone implements EntryPoint {
 
 	private ICollectionServiceAsync collectionService = GWT.create(ICollectionService.class);
+	private IContextServiceAsync contextService = GWT.create(IContextService.class);
 	
 	@Override
 	public void onModuleLoad() {
@@ -52,6 +56,7 @@ public class StandAlone implements EntryPoint {
 			c.getGraph().addRelation(new Relation(c.getGraph().getRoot(Type.PART_OF), v1, new Edge(Type.PART_OF, Source.USER)));
 			c.getGraph().addRelation(new Relation(v1, v2, new Edge(Type.PART_OF, Source.IMPORT)));
 			
+			
 			collectionService.insert(c, new AsyncCallback<Collection>() {
 				@Override
 				public void onFailure(Throwable caught) {
@@ -60,6 +65,22 @@ public class StandAlone implements EntryPoint {
 				@Override
 				public void onSuccess(final Collection c) {
 					System.out.println("success");
+					
+					List<Context> contexts = new LinkedList<Context>();
+					contexts.add(new Context(0, "s1", "a i dont like this"));
+					contexts.add(new Context(0, "s2", "a tree with a big stem"));
+					contexts.add(new Context(0, "s3", "flowers are green and yellow"));
+					contextService.insert(0, "secret", contexts, new AsyncCallback<List<Context>>() {
+						@Override
+						public void onFailure(Throwable caught) {
+							caught.printStackTrace();
+						}
+						@Override
+						public void onSuccess(List<Context> result) {
+							System.out.println("success");
+						}
+					});
+					
 					/*collectionService.add(c.getId(), c.getSecret(), new Relation(v2, v1, new Edge(Type.SUBCLASS_OF, Source.USER)), 
 							new AsyncCallback<Boolean>() {
 								@Override

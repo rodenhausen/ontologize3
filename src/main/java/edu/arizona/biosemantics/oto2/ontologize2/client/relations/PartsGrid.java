@@ -2,11 +2,14 @@ package edu.arizona.biosemantics.oto2.ontologize2.client.relations;
 
 import java.util.List;
 
+import com.google.gwt.dom.client.Style.BorderStyle;
+import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.event.shared.GwtEvent;
 import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
 import com.sencha.gxt.widget.core.client.box.MessageBox;
+import com.sencha.gxt.widget.core.client.container.SimpleContainer;
 import com.sencha.gxt.widget.core.client.event.SelectEvent;
 import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
 
@@ -119,5 +122,10 @@ public class PartsGrid extends MenuTermsGrid {
 				replace(dest, r.getDestination(), new Vertex(newDest.getValue() + " " + r.getDestination().getValue()));
 			}
 		}
+	}
+	
+	@Override
+	protected SimpleContainer createCreateRowContainer() {
+		return null;
 	}
 }

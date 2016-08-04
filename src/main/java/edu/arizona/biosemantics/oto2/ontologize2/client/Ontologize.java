@@ -23,6 +23,7 @@ import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.RelationsView;
 import edu.arizona.biosemantics.oto2.ontologize2.client.candidate.CandidateView;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
+import edu.arizona.biosemantics.oto2.ontologize2.client.info.ContextView;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.TreeView;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.VisualizationView;
 
@@ -57,6 +58,17 @@ public class Ontologize extends SimpleContainer {
 		d.setSplit(true);
 		d.setCollapseMini(true);
 		blc.setEastWidget(cp, d);
+		
+		ContextView contextView = new ContextView(eventBus);
+		cp = new ContentPanel();
+		cp.setHeadingText("Context");
+		cp.add(contextView);
+		d = new BorderLayoutData(.30);
+		d.setMargins(new Margins(0, 0, 0, 0));
+		d.setCollapsible(true);
+		d.setSplit(true);
+		d.setCollapseMini(true);
+		blc.setSouthWidget(cp, d);
 		
 		RelationsView relationsView = new RelationsView(eventBus);
 		cp = new ContentPanel();
