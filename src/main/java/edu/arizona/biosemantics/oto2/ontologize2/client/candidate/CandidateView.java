@@ -81,13 +81,14 @@ public class CandidateView extends SimpleContainer {
 		});
 		tree.getElement().setAttribute("source", "termsview");
 		tree.getSelectionModel().setSelectionMode(SelectionMode.MULTI);
-		tree.getSelectionModel().addSelectionHandler(new SelectionHandler<TextTreeNode>() {
+		/*tree.getSelectionModel().addSelectionHandler(new SelectionHandler<TextTreeNode>() {
 			@Override
 			public void onSelection(SelectionEvent<TextTreeNode> event) {
 				eventBus.fireEvent(new SelectTermEvent(event.getSelectedItem().getText()));
 			}
-		});
+		});*/
 		tree.setAutoExpand(true);
+		tree.setContextMenu(createContextMenu());
 		
 		TreeDragSource<TextTreeNode> dragSource = new TreeDragSource<TextTreeNode>(tree) {
 			@Override
@@ -202,6 +203,19 @@ public class CandidateView extends SimpleContainer {
 		this.add(vlc);
 	}
 	
+	private Menu createContextMenu() {
+		Menu menu = new Menu();
+		MenuItem context = new MenuItem("Show Context");
+		context.addSelectionHandler(new SelectionHandler<Item>() {
+			@Override
+			public void onSelection(SelectionEvent<Item> event) {
+				eventBus.fireEvent(new SelectTermEvent(tree.getSelectionModel().getSelectedItem().getText()));
+			}
+		});
+		menu.add(context);
+		return menu;
+	}
+
 	private BucketTreeNode getSelectedBucket() {
 		List<TextTreeNode> selection = tree.getSelectionModel().getSelectedItems();
 		if(!selection.isEmpty()) {

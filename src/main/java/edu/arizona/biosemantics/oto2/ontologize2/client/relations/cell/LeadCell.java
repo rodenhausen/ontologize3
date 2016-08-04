@@ -31,6 +31,7 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.Alerter;
 import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.SelectTermEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
@@ -69,51 +70,78 @@ public class LeadCell extends MenuExtendedCell<Vertex> {
 	
 	@Override
 	protected Menu createContextMenu(int column, int rowIndex) {
-		final Row row = termsGrid.getRow(rowIndex);
 		Menu menu = new Menu();
-		MenuItem removeItem = new MenuItem("Remove this row");
+		final OntologyGraph g = ModelController.getCollection().getGraph();
+		final Row row = termsGrid.getRow(rowIndex);
+			
+		MenuItem removeItem = new MenuItem("Remove all attached terms");
 		removeItem.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
 				OntologyGraph g = ModelController.getCollection().getGraph();
 				Vertex targetVertex = row.getLead();
-				for(final Relation r : g.getInRelations(targetVertex, termsGrid.getType())) {
-					final MessageBox box = Alerter.showYesNoCancelConfirm("Remove relation", "You are about to remove the relation " + r.toString() + ".\n" +
-							"Do you want to remove all children of " + r.getDestination() + " or attach them instead to " + r.getSource());
-					box.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler() {
-						@Override
-						public void onSelect(SelectEvent event) {
-							eventBus.fireEvent(new RemoveRelationEvent(true, r));
-							/*for(GwtEvent<Handler> e : createRemoveEvents(true, relation)) {
-								eventBus.fireEvent(e);
-							}*/
-							box.hide();
-						}
-					});
-					box.getButton(PredefinedButton.NO).addSelectHandler(new SelectHandler() {
-						@Override
-						public void onSelect(SelectEvent event) {
+				for(final Relation r : g.getOutRelations(targetVertex, termsGrid.getType())) {
+					if(g.getInRelations(r.getDestination(), termsGrid.getType()).size() <= 1) {
+						if(g.getOutRelations(r.getDestination(), termsGrid.getType()).isEmpty()) {
 							eventBus.fireEvent(new RemoveRelationEvent(false, r));
-							/*for(GwtEvent<Handler> e : createRemoveEvents(false, relation)) {
-								eventBus.fireEvent(e);
-							}*/
-							box.hide();
+						} else {
+							doAskForRecursiveRemoval(r);
 						}
-					});
-					box.getButton(PredefinedButton.CANCEL).addSelectHandler(new SelectHandler() {
-						@Override
-						public void onSelect(SelectEvent event) {
-							box.hide();
-						}
-					});
-				}
+					} else {
+						eventBus.fireEvent(new RemoveRelationEvent(false, r));
+					}
+				} 
 			}
 		});
+		MenuItem context = new MenuItem("Show Context");
+		context.addSelectionHandler(new SelectionHandler<Item>() {
+			@Override
+			public void onSelection(SelectionEvent<Item> event) {
+				eventBus.fireEvent(new SelectTermEvent(row.getLead().getValue()));
+			}
+		});
+		menu.add(context);
 		menu.add(removeItem);
 		
 		return menu;
 	}
 
+	protected void doAskForRecursiveRemoval(final Relation relation) {
+		OntologyGraph g = ModelController.getCollection().getGraph();
+		List<Vertex> targets = new LinkedList<Vertex>();
+		for(Relation r : g.getOutRelations(relation.getDestination(), termsGrid.getType())) 
+			targets.add(r.getDestination());
+		final MessageBox box = Alerter.showYesNoCancelConfirm("Remove relation", "You are about to remove the relation " + relation.toString() + ".\n" +
+				"Do you want to remove all children of " + relation.getDestination() + " or attach them instead to " + relation.getSource());
+		box.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler() {
+			@Override
+			public void onSelect(SelectEvent event) {
+				eventBus.fireEvent(new RemoveRelationEvent(true, relation));
+				/*for(GwtEvent<Handler> e : createRemoveEvents(true, relation)) {
+					eventBus.fireEvent(e);
+				}*/
+				box.hide();
+			}
+		});
+		box.getButton(PredefinedButton.NO).addSelectHandler(new SelectHandler() {
+			@Override
+			public void onSelect(SelectEvent event) {
+				eventBus.fireEvent(new RemoveRelationEvent(false, relation));
+				/*for(GwtEvent<Handler> e : createRemoveEvents(false, relation)) {
+					eventBus.fireEvent(e);
+				}*/
+				box.hide();
+			}
+		});
+		box.getButton(PredefinedButton.CANCEL).addSelectHandler(new SelectHandler() {
+			@Override
+			public void onSelect(SelectEvent event) {
+				box.hide();
+			}
+		});
+	}
+	
+	
 	@Override
 	public void render(Context context, Vertex value, SafeHtmlBuilder sb) {
 		SafeHtml rendered = templates.cell("", columnHeaderStyles.headInner(),

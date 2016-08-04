@@ -32,6 +32,7 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.SelectTermEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent.Handler;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
@@ -79,50 +80,71 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 	@Override
 	protected Menu createContextMenu(int columnIndex, int rowIndex) {
 		final Row row = termsGrid.getRow(rowIndex);
-		final Relation relation = row.getAttached().get(columnIndex - 1);
+		final Relation r = row.getAttached().get(columnIndex - 1);
 		Menu menu = new Menu();
 		MenuItem removeItem = new MenuItem("Remove this term");
 		removeItem.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
-				List<Vertex> targets = new LinkedList<Vertex>();
 				OntologyGraph g = ModelController.getCollection().getGraph();
-				for(Relation r : g.getOutRelations(relation.getDestination(), termsGrid.getType())) 
-					targets.add(r.getDestination());
-				final MessageBox box = Alerter.showYesNoCancelConfirm("Remove relation", "You are about to remove the relation " + relation.toString() + ".\n" +
-						"Do you want to remove all children of " + relation.getDestination() + " or attach them instead to " + relation.getSource());
-				box.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler() {
-					@Override
-					public void onSelect(SelectEvent event) {
-						eventBus.fireEvent(new RemoveRelationEvent(true, relation));
-						/*for(GwtEvent<Handler> e : createRemoveEvents(true, relation)) {
-							eventBus.fireEvent(e);
-						}*/
-						box.hide();
+				if(g.getInRelations(r.getDestination(), termsGrid.getType()).size() <= 1) {
+					if(g.getOutRelations(r.getDestination(), termsGrid.getType()).isEmpty()) {
+						eventBus.fireEvent(new RemoveRelationEvent(false, r));
+					} else {
+						doAskForRecursiveRemoval(r);
 					}
-				});
-				box.getButton(PredefinedButton.NO).addSelectHandler(new SelectHandler() {
-					@Override
-					public void onSelect(SelectEvent event) {
-						eventBus.fireEvent(new RemoveRelationEvent(false, relation));
-						/*for(GwtEvent<Handler> e : createRemoveEvents(false, relation)) {
-							eventBus.fireEvent(e);
-						}*/
-						box.hide();
-					}
-				});
-				box.getButton(PredefinedButton.CANCEL).addSelectHandler(new SelectHandler() {
-					@Override
-					public void onSelect(SelectEvent event) {
-						box.hide();
-					}
-				});
+				} else {
+					eventBus.fireEvent(new RemoveRelationEvent(false, r));
+				}
 			}
 		});
+		MenuItem context = new MenuItem("Show Context");
+		context.addSelectionHandler(new SelectionHandler<Item>() {
+			@Override
+			public void onSelection(SelectionEvent<Item> event) {
+				eventBus.fireEvent(new SelectTermEvent(r.getDestination().getValue()));
+			}
+		});
+		menu.add(context);
 		menu.add(removeItem);
 		return menu;
 	}
 	
+	protected void doAskForRecursiveRemoval(final Relation relation) {
+		OntologyGraph g = ModelController.getCollection().getGraph();
+		List<Vertex> targets = new LinkedList<Vertex>();
+		for(Relation r : g.getOutRelations(relation.getDestination(), termsGrid.getType())) 
+			targets.add(r.getDestination());
+		final MessageBox box = Alerter.showYesNoCancelConfirm("Remove relation", "You are about to remove the relation " + relation.toString() + ".\n" +
+				"Do you want to remove all children of " + relation.getDestination() + " or attach them instead to " + relation.getSource());
+		box.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler() {
+			@Override
+			public void onSelect(SelectEvent event) {
+				eventBus.fireEvent(new RemoveRelationEvent(true, relation));
+				/*for(GwtEvent<Handler> e : createRemoveEvents(true, relation)) {
+					eventBus.fireEvent(e);
+				}*/
+				box.hide();
+			}
+		});
+		box.getButton(PredefinedButton.NO).addSelectHandler(new SelectHandler() {
+			@Override
+			public void onSelect(SelectEvent event) {
+				eventBus.fireEvent(new RemoveRelationEvent(false, relation));
+				/*for(GwtEvent<Handler> e : createRemoveEvents(false, relation)) {
+					eventBus.fireEvent(e);
+				}*/
+				box.hide();
+			}
+		});
+		box.getButton(PredefinedButton.CANCEL).addSelectHandler(new SelectHandler() {
+			@Override
+			public void onSelect(SelectEvent event) {
+				box.hide();
+			}
+		});
+	}
+
 	/*private List<GwtEvent> createRemoveEvents(boolean recursive, Relation relation) {
 		List<GwtEvent> result = new LinkedList<GwtEvent>();
 		if(recursive) {

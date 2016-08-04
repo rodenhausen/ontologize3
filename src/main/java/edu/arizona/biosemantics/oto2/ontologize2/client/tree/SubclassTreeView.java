@@ -76,17 +76,18 @@ public class SubclassTreeView extends TreeView {
 				sourceNode = vertexNodeMap.get(r.getSource()).iterator().next();
 			} else {
 				sourceNode = new VertexTreeNode(r.getSource());
-				vertexNodeMap.put(r.getSource(), new HashSet<VertexTreeNode>(Arrays.asList(sourceNode)));
-				store.add(sourceNode);
+				add(null, sourceNode);
 			}
 	 		//create either way, to get a new id
 	 		VertexTreeNode destinationNode = new VertexTreeNode(r.getDestination());
-			store.add(sourceNode, destinationNode);
-			treeGrid.setExpanded(sourceNode, true);
-			if(!vertexNodeMap.containsKey(r.getDestination()))
-				vertexNodeMap.put(r.getDestination(), new HashSet<VertexTreeNode>(Arrays.asList(destinationNode)));
-			else {
-				vertexNodeMap.get(r.getDestination()).add(destinationNode);
+	 		add(sourceNode, destinationNode);
+	 		treeGrid.setExpanded(sourceNode, true);
+			
+	 		if(vertexNodeMap.get(r.getDestination()).size() > 1) {
+				//remove child nodes below already existings
+				for(VertexTreeNode n : vertexNodeMap.get(r.getDestination())) {
+					removeAllChildren(n);
+				}
 			}
 		}
 		
@@ -162,6 +163,18 @@ public class SubclassTreeView extends TreeView {
 	
 	@Override
 	protected void onCreateRelationEffectiveInModel(Relation r) {
+		if(r.getEdge().getType().equals(type)) {
+			if(!isVisible(r))
+				return;
+			
+			VertexTreeNode destinationNode = new VertexTreeNode(r.getDestination());
+			if(vertexNodeMap.containsKey(r.getDestination()))
+				refreshNodes(vertexNodeMap.get(r.getDestination()));
+		}
+	}
+	
+	@Override
+	protected void onRemoveRelationEffectiveInModel(Relation r) {
 		if(r.getEdge().getType().equals(type)) {
 			if(!isVisible(r))
 				return;

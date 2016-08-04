@@ -37,7 +37,6 @@ public class CreateRelationEvent extends GwtEvent<Handler> implements Serializab
 
 	@Override
 	protected void dispatch(Handler handler) {
-		System.out.println("dispatch to " + handler + " " + this.getRelations());
 		handler.onCreate(this);
 	}
 

@@ -2,9 +2,6 @@ package edu.arizona.biosemantics.oto2.ontologize2.server;
 
 import java.util.List;
 
-
-
-
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.google.inject.Inject;
 

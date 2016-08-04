@@ -68,8 +68,8 @@ public class StandAlone implements EntryPoint {
 					
 					List<Context> contexts = new LinkedList<Context>();
 					contexts.add(new Context(0, "s1", "a i dont like this"));
-					contexts.add(new Context(0, "s2", "a tree with a big stem"));
-					contexts.add(new Context(0, "s3", "flowers are green and yellow"));
+					contexts.add(new Context(1, "s2", "a tree with a big stem"));
+					contexts.add(new Context(2, "s3", "flowers are green and yellow"));
 					contextService.insert(0, "secret", contexts, new AsyncCallback<List<Context>>() {
 						@Override
 						public void onFailure(Throwable caught) {

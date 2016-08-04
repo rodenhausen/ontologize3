@@ -301,12 +301,12 @@ public class TermsGrid implements IsWidget {
 			}
 		});
 		
-		eventBus.addHandler(RemoveCandidateEvent.TYPE, new RemoveCandidateEvent.Handler() {
+		/*eventBus.addHandler(RemoveCandidateEvent.TYPE, new RemoveCandidateEvent.Handler() {
 			@Override
 			public void onRemove(RemoveCandidateEvent event) {
 				//removeCandidates(event.getCandidates());
 			}
-		});
+		});*/
 	}
 
 	protected void onCreateRelationEffectiveInModel(Relation r) {

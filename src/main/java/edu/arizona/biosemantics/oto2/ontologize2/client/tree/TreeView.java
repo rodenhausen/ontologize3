@@ -17,6 +17,8 @@ import com.google.gwt.cell.client.Cell;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.FontWeight;
 import com.google.gwt.dom.client.Style.Unit;
+import com.google.gwt.event.logical.shared.SelectionEvent;
+import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
@@ -43,6 +45,9 @@ import com.sencha.gxt.widget.core.client.event.SelectEvent;
 import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
 import com.sencha.gxt.widget.core.client.grid.ColumnConfig;
 import com.sencha.gxt.widget.core.client.grid.ColumnModel;
+import com.sencha.gxt.widget.core.client.menu.Item;
+import com.sencha.gxt.widget.core.client.menu.Menu;
+import com.sencha.gxt.widget.core.client.menu.MenuItem;
 import com.sencha.gxt.widget.core.client.toolbar.ToolBar;
 import com.sencha.gxt.widget.core.client.tree.Tree;
 import com.sencha.gxt.widget.core.client.treegrid.TreeGrid;
@@ -54,6 +59,7 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEven
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveCandidateEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.SelectTermEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.node.TextTreeNodeProperties;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.node.VertexCell;
@@ -128,12 +134,26 @@ public class TreeView extends SimpleContainer {
 				onDoubleClick(vertexNode);
 			}
 		});
+		treeGrid.setContextMenu(createContextMenu());
 		VerticalLayoutContainer vlc = new VerticalLayoutContainer();
 		vlc.add(buttonBar, new VerticalLayoutData(1, -1));
 		vlc.add(treeGrid, new VerticalLayoutData(1, 1));
 		this.setWidget(vlc);
 		
 		bindEvents();
+	}
+
+	private Menu createContextMenu() {
+		Menu menu = new Menu();
+		MenuItem context = new MenuItem("Show Context");
+		context.addSelectionHandler(new SelectionHandler<Item>() {
+			@Override
+			public void onSelection(SelectionEvent<Item> event) {
+				eventBus.fireEvent(new SelectTermEvent(treeGrid.getSelectionModel().getSelectedItem().getText()));
+			}
+		});
+		menu.add(context);
+		return menu;
 	}
 
 	protected void onDoubleClick(VertexTreeNode vertexNode) {
@@ -153,10 +173,8 @@ public class TreeView extends SimpleContainer {
 		eventBus.addHandler(CreateRelationEvent.TYPE, new CreateRelationEvent.Handler() {
 			@Override
 			public void onCreate(CreateRelationEvent event) {
-				System.out.println("on cretae " + event.getRelations());
 				if(!event.isEffectiveInModel())
 					for(Relation r : event.getRelations()) {
-						System.out.println(" do " + r.toString());
 						createRelation(r);
 					}
 				else
@@ -170,17 +188,25 @@ public class TreeView extends SimpleContainer {
 				if(!event.isEffectiveInModel())
 					for(Relation r : event.getRelations())
 						removeRelation(r, event.isRecursive());
+				else
+					for(Relation r : event.getRelations()) 
+						onRemoveRelationEffectiveInModel(r);
 			}
 		});
-		eventBus.addHandler(RemoveCandidateEvent.TYPE, new RemoveCandidateEvent.Handler() {
+		/*eventBus.addHandler(RemoveCandidateEvent.TYPE, new RemoveCandidateEvent.Handler() {
 			@Override
 			public void onRemove(RemoveCandidateEvent event) {
 				for(Candidate c : event.getCandidates()) 
 					removeCandidate(c);
 			}
-		});
+		});*/
 	}
 	
+	protected void onRemoveRelationEffectiveInModel(Relation r) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	protected void onCreateRelationEffectiveInModel(Relation r) {
 		// TODO Auto-generated method stub
 		
@@ -189,12 +215,12 @@ public class TreeView extends SimpleContainer {
 	protected void createFromRoot(OntologyGraph g, Vertex root) {
 		clearTree();
 		VertexTreeNode rootNode = new VertexTreeNode(root);
-		store.add(rootNode);
-		vertexNodeMap.put(root, new HashSet<VertexTreeNode>(Arrays.asList(rootNode)));
-		
+		add(null, rootNode);
 		createFromVertex(g, root);
 	}
 	
+
+
 	protected void createFromVertex(OntologyGraph g, Vertex source) {
 		for(Relation r : g.getOutRelations(source, type)) {
 			createRelation(r);
@@ -203,11 +229,11 @@ public class TreeView extends SimpleContainer {
 	}
 
 	protected void removeCandidate(Candidate c) {
-		Vertex possibleVertex = new Vertex(c.getText());
+		/*Vertex possibleVertex = new Vertex(c.getText());
 		if(vertexNodeMap.containsKey(possibleVertex)) {
 			for(VertexTreeNode node : vertexNodeMap.get(possibleVertex))
-				store.remove(node);
-		}
+				remove(node);
+		}*/
 	}
 
 	protected void createRelation(Relation r) {
@@ -217,16 +243,14 @@ public class TreeView extends SimpleContainer {
 				sourceNode = vertexNodeMap.get(r.getSource()).iterator().next();
 			} else {
 				sourceNode = new VertexTreeNode(r.getSource());
-				vertexNodeMap.put(r.getSource(), new HashSet<VertexTreeNode>(Arrays.asList(sourceNode)));
-				store.add(sourceNode);
+				add(null, sourceNode);
 			}
 			if(vertexNodeMap.containsKey(r.getDestination())) {
 				Alerter.showAlert("Failed to create relation", "Failed to create relation");
 				return;
 			}
 			VertexTreeNode destinationNode = new VertexTreeNode(r.getDestination());
-			vertexNodeMap.put(r.getDestination(), new HashSet<VertexTreeNode>(Arrays.asList(destinationNode)));
-			store.add(sourceNode, destinationNode);
+			add(sourceNode, destinationNode);
 			if(treeGrid.isRendered())
 				treeGrid.setExpanded(sourceNode, true);
 		}
@@ -238,18 +262,15 @@ public class TreeView extends SimpleContainer {
 				VertexTreeNode sourceNode = vertexNodeMap.get(r.getSource()).iterator().next();
 				VertexTreeNode targetNode = vertexNodeMap.get(r.getDestination()).iterator().next();
 				if(recursive) {
-					store.remove(targetNode);
+					remove(targetNode);
 				} else {
 					List<TreeNode<VertexTreeNode>> targetChildNodes = new LinkedList<TreeNode<VertexTreeNode>>();
 					for(VertexTreeNode targetChild : store.getChildren(targetNode)) {
 						targetChildNodes.add(store.getSubTree(targetChild));
 					}
-					store.remove(targetNode);
+					remove(targetNode);
 					store.addSubTree(sourceNode, store.getChildCount(sourceNode), targetChildNodes);
 				}
-			} else {
-				Alerter.showAlert("Failed to remove relation", "Failed to remove relation");
-				return;
 			}
 		}
 	}
@@ -266,14 +287,46 @@ public class TreeView extends SimpleContainer {
 		}
 		
 		VertexTreeNode parent = store.getParent(oldNode);
-		store.remove(oldNode);
-		if(parent != null) 
-			store.add(parent, newNode);
-		else
-			store.add(newNode);
+		remove(oldNode);
+		add(parent, newNode);
 		store.addSubTree(newNode, 0, childNodes);
 	}
 	
+	protected void remove(VertexTreeNode node) {
+		removeAllChildren(node);
+		store.remove(node);
+		if(vertexNodeMap.containsKey(node.getVertex())) {
+			vertexNodeMap.get(node.getVertex()).remove(node);
+			if(vertexNodeMap.get(node.getVertex()).isEmpty())
+				vertexNodeMap.remove(node.getVertex());
+		}
+	}
+	
+	protected void removeAllChildren(VertexTreeNode frommNode) {
+		List<VertexTreeNode> allRemoves = store.getAllChildren(frommNode);
+		for(VertexTreeNode remove : allRemoves) {
+			Vertex v = remove.getVertex();
+			if(vertexNodeMap.containsKey(v)) {
+				vertexNodeMap.get(v).remove(remove);
+				if(vertexNodeMap.get(v).isEmpty()) 
+					vertexNodeMap.remove(v);
+			}
+		}
+		store.removeChildren(frommNode);
+	}
+	
+	protected void add(VertexTreeNode parent, VertexTreeNode child) {
+		if(parent == null)
+			store.add(child);
+		else
+			store.add(parent, child);
+		if(!vertexNodeMap.containsKey(child.getVertex()))
+			vertexNodeMap.put(child.getVertex(), new HashSet<VertexTreeNode>(Arrays.asList(child)));
+		else {
+			vertexNodeMap.get(child.getVertex()).add(child);
+		}
+	}
+
 	protected Vertex getRoot() {
 		return treeGrid.getTreeStore().getRootItems().get(0).getVertex();
 	}
