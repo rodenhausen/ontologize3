@@ -40,6 +40,10 @@ public class MenuTermsGrid extends TermsGrid {
 			@Override
 			public void onSelect(SelectEvent event) {
 				final MultiLinePromptMessageBox box = new MultiLinePromptMessageBox("Import " + type.getDisplayLabel(), "");
+				box.setResizable(true);
+				box.setResize(true);
+				box.setMaximizable(true);
+				box.setModal(true);
 				box.getButton(PredefinedButton.OK).addSelectHandler(new SelectHandler() {
 					@Override
 					public void onSelect(SelectEvent event) {
@@ -78,6 +82,10 @@ public class MenuTermsGrid extends TermsGrid {
 			@Override
 			public void onSelect(SelectEvent event) {
 				final MultiLinePromptMessageBox box = new MultiLinePromptMessageBox("Export " + type.getDisplayLabel(), "");
+				box.setResizable(true);
+				box.setResize(true);
+				box.setMaximizable(true);
+				box.setModal(true);
 				String export = createExport();
 				box.getTextArea().setText(export);
 				box.getButton(PredefinedButton.OK).addSelectHandler(new SelectHandler() {

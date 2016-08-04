@@ -16,6 +16,7 @@ public class LoadCollectionEvent extends GwtEvent<Handler> implements Serializab
 	
     public static Type<Handler> TYPE = new Type<Handler>();
 	private Collection collection;
+	private boolean isEffectiveInModel = false;
 	
 	private LoadCollectionEvent() { }
 	
@@ -35,6 +36,14 @@ public class LoadCollectionEvent extends GwtEvent<Handler> implements Serializab
 
 	public Collection getCollection() {
 		return collection;
+	}
+
+	public boolean isEffectiveInModel() {
+		return isEffectiveInModel ;
+	}
+
+	public void setEffectiveInModel(boolean isEffectiveInModel) {
+		this.isEffectiveInModel = isEffectiveInModel;
 	}
 
 }

@@ -1,9 +1,5 @@
 package edu.arizona.biosemantics.oto2.ontologize2.client.tree.node;
 
-import java.util.List;
-
-import com.sencha.gxt.data.shared.TreeStore.TreeNode;
-
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Candidate;
 
 /**

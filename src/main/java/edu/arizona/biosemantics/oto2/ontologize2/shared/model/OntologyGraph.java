@@ -408,4 +408,8 @@ public class OntologyGraph implements Serializable {
 			this.addRelationsRecursively(g, r.getDestination(), type);
 		}
 	}
+
+	public Collection<Vertex> getVertices() {
+		return graph.getVertices();
+	}
 }

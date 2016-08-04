@@ -10,10 +10,7 @@ import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 
 import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
-import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
-import edu.arizona.biosemantics.oto2.ontologize2.client.relations.cell.LeadCell;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.TreeView;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Type;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;

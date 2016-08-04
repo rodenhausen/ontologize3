@@ -165,9 +165,13 @@ public class TreeView extends SimpleContainer {
 		eventBus.addHandler(LoadCollectionEvent.TYPE, new LoadCollectionEvent.Handler() {
 			@Override
 			public void onLoad(LoadCollectionEvent event) {
-				OntologyGraph g = event.getCollection().getGraph();
-				Vertex root = g.getRoot(type);
-				createFromRoot(g, root);
+				if(!event.isEffectiveInModel()) {
+					OntologyGraph g = event.getCollection().getGraph();
+					Vertex root = g.getRoot(type);
+					createFromRoot(g, root);
+				} else {
+					onLoadCollectionEffectiveInModel();
+				}
 			}
 		}); 
 		eventBus.addHandler(CreateRelationEvent.TYPE, new CreateRelationEvent.Handler() {
@@ -202,6 +206,11 @@ public class TreeView extends SimpleContainer {
 		});*/
 	}
 	
+	protected void onLoadCollectionEffectiveInModel() {
+		// TODO Auto-generated method stub
+		
+	}
+
 	protected void onRemoveRelationEffectiveInModel(Relation r) {
 		// TODO Auto-generated method stub
 		

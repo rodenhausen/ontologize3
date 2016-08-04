@@ -33,8 +33,11 @@ public class ModelController {
 		eventBus.addHandler(LoadCollectionEvent.TYPE, new LoadCollectionEvent.Handler() {
 			@Override
 			public void onLoad(LoadCollectionEvent event) {
-				collection = event.getCollection();
-				
+				if(!event.isEffectiveInModel()) {
+					collection = event.getCollection();
+					event.setEffectiveInModel(true);
+					eventBus.fireEvent(event);
+				}
 			}
 		});
 		eventBus.addHandler(CreateRelationEvent.TYPE, new CreateRelationEvent.Handler() {

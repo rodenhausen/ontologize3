@@ -276,9 +276,13 @@ public class TermsGrid implements IsWidget {
 		eventBus.addHandler(LoadCollectionEvent.TYPE, new LoadCollectionEvent.Handler() {			
 			@Override
 			public void onLoad(LoadCollectionEvent event) {
-				clearGrid();
-				OntologyGraph g = event.getCollection().getGraph();
-				TermsGrid.this.onLoad(g);
+				if(!event.isEffectiveInModel()) {
+					clearGrid();
+					OntologyGraph g = event.getCollection().getGraph();
+					TermsGrid.this.onLoad(g);
+				} else {
+					onLoadCollectionEffectiveInModel();
+				}
 			}
 		}); 
 		eventBus.addHandler(CreateRelationEvent.TYPE, new CreateRelationEvent.Handler() {
@@ -298,6 +302,9 @@ public class TermsGrid implements IsWidget {
 				if(!event.isEffectiveInModel())
 					for(Relation r : event.getRelations())
 						removeRelation(r, event.isRecursive());
+				else 
+					for(Relation r : event.getRelations())
+						onRemoveRelationEffectiveInModel(r);
 			}
 		});
 		
@@ -307,6 +314,16 @@ public class TermsGrid implements IsWidget {
 				//removeCandidates(event.getCandidates());
 			}
 		});*/
+	}
+
+	protected void onRemoveRelationEffectiveInModel(Relation r) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	protected void onLoadCollectionEffectiveInModel() {
+		// TODO Auto-generated method stub
+		
 	}
 
 	protected void onCreateRelationEffectiveInModel(Relation r) {
@@ -324,13 +341,17 @@ public class TermsGrid implements IsWidget {
 		Row rootRow = new Row(g.getRoot(type));
 		addRow(rootRow);
 		
-		createEdges(g, g.getRoot(type));
+		createEdges(g, g.getRoot(type), new HashSet<String>());
 	}
 	
-	protected void createEdges(OntologyGraph g, Vertex source) {
+	protected void createEdges(OntologyGraph g, Vertex source, Set<String> createdRelations) {
 		for(Relation r : g.getOutRelations(source, type)) {
-			createRelation(r);
-			createEdges(g, r.getDestination());
+			String relationIdentifier = r.getSource().getValue() + " - " + r.getDestination().getValue() + " " + r.getEdge().getType().toString();
+			if(!createdRelations.contains(relationIdentifier)) {
+				createdRelations.add(relationIdentifier);
+				createRelation(r);
+				createEdges(g, r.getDestination(), createdRelations);
+			}
 		}
 	}
 

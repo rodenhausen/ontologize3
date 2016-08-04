@@ -17,6 +17,7 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
+import edu.arizona.biosemantics.oto2.ontologize2.client.tree.node.VertexTreeNode;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Source;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
@@ -116,7 +117,28 @@ public class SubclassesGrid extends MenuTermsGrid {
 	}
 	
 	@Override
+	protected void onRemoveRelationEffectiveInModel(Relation r) {
+		if(r.getEdge().getType().equals(type)) {
+			Vertex dest = r.getDestination();
+			for(Row row : getAttachedRows(dest)) 
+				grid.getStore().update(row);
+		}
+	}
+	
+	@Override
 	protected SimpleContainer createCreateRowContainer() {
 		return null;
+	}
+	
+	@Override
+	protected void onLoadCollectionEffectiveInModel() {
+		OntologyGraph g = ModelController.getCollection().getGraph();
+		for(Vertex v : g.getVertices()) {
+			List<Relation> inRelations = g.getInRelations(v, type);
+			if(inRelations.size() > 1) {
+				for(Row row : getAttachedRows(v)) 
+					grid.getStore().update(row);
+			}
+		}
 	}
 }

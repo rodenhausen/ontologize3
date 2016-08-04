@@ -166,8 +166,6 @@ public class SubclassTreeView extends TreeView {
 		if(r.getEdge().getType().equals(type)) {
 			if(!isVisible(r))
 				return;
-			
-			VertexTreeNode destinationNode = new VertexTreeNode(r.getDestination());
 			if(vertexNodeMap.containsKey(r.getDestination()))
 				refreshNodes(vertexNodeMap.get(r.getDestination()));
 		}
@@ -178,10 +176,19 @@ public class SubclassTreeView extends TreeView {
 		if(r.getEdge().getType().equals(type)) {
 			if(!isVisible(r))
 				return;
-			
-			VertexTreeNode destinationNode = new VertexTreeNode(r.getDestination());
 			if(vertexNodeMap.containsKey(r.getDestination()))
 				refreshNodes(vertexNodeMap.get(r.getDestination()));
+		}
+	}
+	
+	@Override
+	protected void onLoadCollectionEffectiveInModel() {
+		OntologyGraph g = ModelController.getCollection().getGraph();
+		for(Vertex v : g.getVertices()) {
+			List<Relation> inRelations = g.getInRelations(v, type);
+			if(inRelations.size() > 1) {
+				refreshNodes(vertexNodeMap.get(v));
+			}
 		}
 	}
 }

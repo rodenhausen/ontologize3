@@ -1,6 +1,7 @@
 package edu.arizona.biosemantics.oto2.ontologize2.client.relations;
 
 import java.util.Arrays;
+import java.util.HashSet;
 
 import com.google.gwt.dom.client.Style.BorderStyle;
 import com.google.gwt.dom.client.Style.Unit;
@@ -60,7 +61,7 @@ public class SynonymsGrid extends MenuTermsGrid {
 	
 	@Override
 	protected void onLoad(OntologyGraph g) {
-		createEdges(g, g.getRoot(type));
+		createEdges(g, g.getRoot(type), new HashSet<String>());
 	}
 	
 	@Override
