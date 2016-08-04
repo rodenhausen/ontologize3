@@ -203,7 +203,6 @@ public class TermsGrid implements IsWidget {
 	protected SimpleContainer createRowContainer;
 	private final int colWidth = 100;
 	protected Type type;
-	protected edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection collection;
 	
 	public TermsGrid(final EventBus eventBus, final Type type) {
 		this.eventBus = eventBus;
@@ -275,7 +274,6 @@ public class TermsGrid implements IsWidget {
 		eventBus.addHandler(LoadCollectionEvent.TYPE, new LoadCollectionEvent.Handler() {			
 			@Override
 			public void onLoad(LoadCollectionEvent event) {
-				TermsGrid.this.collection = event.getCollection();
 				clearGrid();
 				OntologyGraph g = event.getCollection().getGraph();
 				TermsGrid.this.onLoad(g);
@@ -284,15 +282,20 @@ public class TermsGrid implements IsWidget {
 		eventBus.addHandler(CreateRelationEvent.TYPE, new CreateRelationEvent.Handler() {
 			@Override
 			public void onCreate(CreateRelationEvent event) {
-				for(Relation r : event.getRelations())
-					createRelation(r);
+				if(!event.isEffectiveInModel())
+					for(Relation r : event.getRelations())
+						createRelation(r);
+				else
+					for(Relation r : event.getRelations())
+						onCreateRelationEffectiveInModel(r);
 			}
 		});
 		eventBus.addHandler(RemoveRelationEvent.TYPE, new RemoveRelationEvent.Handler() {
 			@Override
 			public void onRemove(RemoveRelationEvent event) {
-				for(Relation r : event.getRelations())
-					removeRelation(r, event.isRecursive());
+				if(!event.isEffectiveInModel())
+					for(Relation r : event.getRelations())
+						removeRelation(r, event.isRecursive());
 			}
 		});
 		
@@ -302,6 +305,11 @@ public class TermsGrid implements IsWidget {
 				//removeCandidates(event.getCandidates());
 			}
 		});
+	}
+
+	protected void onCreateRelationEffectiveInModel(Relation r) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	protected void clearGrid() {
@@ -583,10 +591,6 @@ public class TermsGrid implements IsWidget {
 
 	public Type getType() {
 		return type;
-	}	
-	
-	public edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection getCollection() {
-		return collection;
 	}
 
 }

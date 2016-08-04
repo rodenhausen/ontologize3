@@ -18,6 +18,7 @@ public class CreateRelationEvent extends GwtEvent<Handler> implements Serializab
 	
     public static Type<Handler> TYPE = new Type<Handler>();
 	private Relation[] relations = new Relation[] { };
+	private boolean isEffectiveInModel = false;
 	
 	private CreateRelationEvent() { }
 	
@@ -36,10 +37,19 @@ public class CreateRelationEvent extends GwtEvent<Handler> implements Serializab
 
 	@Override
 	protected void dispatch(Handler handler) {
+		System.out.println("dispatch to " + handler + " " + this.getRelations());
 		handler.onCreate(this);
 	}
 
 	public Relation[] getRelations() {
 		return relations;
+	}
+
+	public boolean isEffectiveInModel() {
+		return isEffectiveInModel;
+	}
+
+	public void setEffectiveInModel(boolean isEffectiveInModel) {
+		this.isEffectiveInModel = isEffectiveInModel;
 	}
 }

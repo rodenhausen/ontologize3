@@ -75,7 +75,7 @@ public class LeadCell extends MenuExtendedCell<Vertex> {
 		removeItem.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
-				OntologyGraph g = termsGrid.getCollection().getGraph();
+				OntologyGraph g = ModelController.getCollection().getGraph();
 				Vertex targetVertex = row.getLead();
 				for(final Relation r : g.getInRelations(targetVertex, termsGrid.getType())) {
 					final MessageBox box = Alerter.showYesNoCancelConfirm("Remove relation", "You are about to remove the relation " + r.toString() + ".\n" +

@@ -82,8 +82,6 @@ public class TreeView extends SimpleContainer {
 	protected TreeGrid<VertexTreeNode> treeGrid;
 	
 	protected ToolBar buttonBar;
-
-	protected edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection collection;
 	
 	public TreeView(EventBus eventBus, Type type) {
 		this.eventBus = eventBus;
@@ -147,7 +145,6 @@ public class TreeView extends SimpleContainer {
 		eventBus.addHandler(LoadCollectionEvent.TYPE, new LoadCollectionEvent.Handler() {
 			@Override
 			public void onLoad(LoadCollectionEvent event) {
-				TreeView.this.collection = event.getCollection();
 				OntologyGraph g = event.getCollection().getGraph();
 				Vertex root = g.getRoot(type);
 				createFromRoot(g, root);
@@ -156,15 +153,23 @@ public class TreeView extends SimpleContainer {
 		eventBus.addHandler(CreateRelationEvent.TYPE, new CreateRelationEvent.Handler() {
 			@Override
 			public void onCreate(CreateRelationEvent event) {
-				for(Relation r : event.getRelations())
-					createRelation(r);
+				System.out.println("on cretae " + event.getRelations());
+				if(!event.isEffectiveInModel())
+					for(Relation r : event.getRelations()) {
+						System.out.println(" do " + r.toString());
+						createRelation(r);
+					}
+				else
+					for(Relation r : event.getRelations())
+						onCreateRelationEffectiveInModel(r);
 			}
 		});
 		eventBus.addHandler(RemoveRelationEvent.TYPE, new RemoveRelationEvent.Handler() {
 			@Override
 			public void onRemove(RemoveRelationEvent event) {
-				for(Relation r : event.getRelations())
-					removeRelation(r, event.isRecursive());
+				if(!event.isEffectiveInModel())
+					for(Relation r : event.getRelations())
+						removeRelation(r, event.isRecursive());
 			}
 		});
 		eventBus.addHandler(RemoveCandidateEvent.TYPE, new RemoveCandidateEvent.Handler() {
@@ -176,6 +181,11 @@ public class TreeView extends SimpleContainer {
 		});
 	}
 	
+	protected void onCreateRelationEffectiveInModel(Relation r) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	protected void createFromRoot(OntologyGraph g, Vertex root) {
 		clearTree();
 		VertexTreeNode rootNode = new VertexTreeNode(root);
@@ -266,10 +276,6 @@ public class TreeView extends SimpleContainer {
 	
 	protected Vertex getRoot() {
 		return treeGrid.getTreeStore().getRootItems().get(0).getVertex();
-	}
-
-	public edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection getCollection() {
-		return collection;
 	}
 	
 }

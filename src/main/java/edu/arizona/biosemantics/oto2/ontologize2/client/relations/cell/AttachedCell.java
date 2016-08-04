@@ -63,15 +63,14 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 	}
 	
 	protected EventBus eventBus;
-	private TermsGrid termsGrid;
 	private int i;
+	private TermsGrid termsGrid;
 	protected static Templates templates = GWT.create(Templates.class);
 	
 	public AttachedCell(EventBus eventBus, TermsGrid termsGrid, int i) {
 		this.eventBus = eventBus;
 		this.termsGrid = termsGrid;
 		this.i = i;
-		
 	}
 	
 	/**
@@ -87,7 +86,7 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
 				List<Vertex> targets = new LinkedList<Vertex>();
-				OntologyGraph g = termsGrid.getCollection().getGraph();
+				OntologyGraph g = ModelController.getCollection().getGraph();
 				for(Relation r : g.getOutRelations(relation.getDestination(), termsGrid.getType())) 
 					targets.add(r.getDestination());
 				final MessageBox box = Alerter.showYesNoCancelConfirm("Remove relation", "You are about to remove the relation " + relation.toString() + ".\n" +
@@ -162,7 +161,7 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 		final Relation r = value.getAttached().get(i);
 		String textColor = "#000000";
 		String backgroundColor = "";// "#FFFFFF";
-		OntologyGraph g = termsGrid.getCollection().getGraph();
+		OntologyGraph g = ModelController.getCollection().getGraph();
 		if(g.getInRelations(r.getDestination(), r.getEdge().getType()).size() > 1) {
 			backgroundColor = "#ffff00";
 		}

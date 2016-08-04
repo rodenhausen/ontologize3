@@ -18,6 +18,7 @@ public class RemoveRelationEvent extends GwtEvent<Handler> implements Serializab
 	
     public static Type<Handler> TYPE = new Type<Handler>();
 	private Relation[] relations = new Relation[] { };
+	private boolean isEffectiveInModel = false;
 	private boolean recursive = true;
     
 	private RemoveRelationEvent() { }
@@ -48,6 +49,14 @@ public class RemoveRelationEvent extends GwtEvent<Handler> implements Serializab
 
 	public boolean isRecursive() {
 		return recursive;
+	}
+
+	public boolean isEffectiveInModel() {
+		return isEffectiveInModel;
+	}
+
+	public void setEffectiveInModel(boolean isEffectiveInModel) {
+		this.isEffectiveInModel = isEffectiveInModel;
 	}
 	
 }

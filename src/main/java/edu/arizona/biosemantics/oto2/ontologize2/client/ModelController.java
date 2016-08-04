@@ -40,36 +40,44 @@ public class ModelController {
 		eventBus.addHandler(CreateRelationEvent.TYPE, new CreateRelationEvent.Handler() {
 			@Override
 			public void onCreate(CreateRelationEvent event) {
-				for(Relation relation : event.getRelations()) {
-					collectionService.add(collection.getId(), collection.getSecret(), relation, new AsyncCallback<Boolean>() {
-						@Override
-						public void onFailure(Throwable caught) {
-							Alerter.showAlert("Data out of sync", "The data became out of sync with the server. Please reload the window.");
+				if(!event.isEffectiveInModel()) {
+					for(Relation relation : event.getRelations()) {
+						collectionService.add(collection.getId(), collection.getSecret(), relation, new AsyncCallback<Boolean>() {
+							@Override
+							public void onFailure(Throwable caught) {
+								Alerter.showAlert("Data out of sync", "The data became out of sync with the server. Please reload the window.");
+							}
+							@Override
+							public void onSuccess(Boolean result) {	}
+						});
+						try {
+							collection.getGraph().addRelation(relation);
+						} catch (Exception e) {
+							e.printStackTrace();
 						}
-						@Override
-						public void onSuccess(Boolean result) {	}
-					});
-					try {
-						collection.getGraph().addRelation(relation);
-					} catch (Exception e) {
-						e.printStackTrace();
 					}
+					event.setEffectiveInModel(true);
+					eventBus.fireEvent(event);
 				}
 			}
 		});	
 		eventBus.addHandler(RemoveRelationEvent.TYPE, new RemoveRelationEvent.Handler() {
 			@Override
 			public void onRemove(RemoveRelationEvent event) {
-				for(Relation relation : event.getRelations()) {
-					collectionService.remove(collection.getId(), collection.getSecret(), relation, new AsyncCallback<Void>() {
-						@Override
-						public void onFailure(Throwable caught) {
-							Alerter.showAlert("Data out of sync", "The data became out of sync with the server. Please reload the window.");
-						}
-						@Override
-						public void onSuccess(Void result) {	}
-					});
-					collection.getGraph().removeRelation(relation);
+				if(!event.isEffectiveInModel()) {
+					for(Relation relation : event.getRelations()) {
+						collectionService.remove(collection.getId(), collection.getSecret(), relation, new AsyncCallback<Void>() {
+							@Override
+							public void onFailure(Throwable caught) {
+								Alerter.showAlert("Data out of sync", "The data became out of sync with the server. Please reload the window.");
+							}
+							@Override
+							public void onSuccess(Void result) {	}
+						});
+						collection.getGraph().removeRelation(relation);
+					}
+					event.setEffectiveInModel(true);
+					eventBus.fireEvent(event);
 				}
 			}
 		});

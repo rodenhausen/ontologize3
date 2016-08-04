@@ -42,7 +42,7 @@ public class VertexCell extends AbstractCell<Vertex> {
 	@Override
 	public void render(com.google.gwt.cell.client.Cell.Context context, Vertex value, SafeHtmlBuilder sb) {
 		String background = "";
-		OntologyGraph g = treeView.getCollection().getGraph();
+		OntologyGraph g = ModelController.getCollection().getGraph();
 		List<Relation> inRelations = g.getInRelations(value, type);
 		if(inRelations.size() > 1)
 			background = "#ffff00";

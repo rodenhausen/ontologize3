@@ -17,6 +17,7 @@ import com.sencha.gxt.widget.core.client.menu.Menu;
 
 import edu.arizona.biosemantics.oto2.ontologize2.client.Alerter;
 import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
+import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.node.VertexTreeNode;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
@@ -86,7 +87,6 @@ public class SubclassTreeView extends TreeView {
 				vertexNodeMap.put(r.getDestination(), new HashSet<VertexTreeNode>(Arrays.asList(destinationNode)));
 			else {
 				vertexNodeMap.get(r.getDestination()).add(destinationNode);
-				refreshNodes(vertexNodeMap.get(r.getDestination()));
 			}
 		}
 		
@@ -128,7 +128,6 @@ public class SubclassTreeView extends TreeView {
 	private void refreshNodes(Set<VertexTreeNode> nodes) {
 		for(VertexTreeNode n : nodes) {
 			treeGrid.refresh(n);
-			treeGrid.getView().refresh(false);
 		}
 	}
 
@@ -159,7 +158,17 @@ public class SubclassTreeView extends TreeView {
 	@Override
 	protected void createFromRoot(OntologyGraph g, Vertex root) {
 		super.createFromRoot(g, root);
-		
-		
+	}
+	
+	@Override
+	protected void onCreateRelationEffectiveInModel(Relation r) {
+		if(r.getEdge().getType().equals(type)) {
+			if(!isVisible(r))
+				return;
+			
+			VertexTreeNode destinationNode = new VertexTreeNode(r.getDestination());
+			if(vertexNodeMap.containsKey(r.getDestination()))
+				refreshNodes(vertexNodeMap.get(r.getDestination()));
+		}
 	}
 }
