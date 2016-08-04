@@ -127,7 +127,7 @@ public class SubclassTreeView extends TreeView {
 
 	private void refreshNodes(Set<VertexTreeNode> nodes) {
 		for(VertexTreeNode n : nodes) {
-			treeGrid.refresh(n);
+			treeGrid.getStore().update(n);
 		}
 	}
 
