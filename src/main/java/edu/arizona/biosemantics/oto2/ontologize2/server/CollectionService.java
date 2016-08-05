@@ -121,4 +121,11 @@ public class CollectionService extends RemoteServiceServlet implements ICollecti
 			collection.getCandidates().remove(candidate.getText());
 		update(collection);
 	}
+
+	@Override
+	public String getOWL(int id, String secret) {
+		
+		
+		return "owl";
+	}
 }

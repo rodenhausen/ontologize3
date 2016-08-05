@@ -108,9 +108,9 @@ public class CandidateView extends SimpleContainer {
 			@Override
 			public void onSelect(SelectEvent event) {
 				final MultiLinePromptMessageBox box = new MultiLinePromptMessageBox("Import terms", "");
-				box.setResizable(true);
+				/*box.setResizable(true);
 				box.setResize(true);
-				box.setMaximizable(true);
+				box.setMaximizable(true);*/
 				box.setModal(true);
 				box.getButton(PredefinedButton.OK).addSelectHandler(new SelectHandler() {
 					@Override

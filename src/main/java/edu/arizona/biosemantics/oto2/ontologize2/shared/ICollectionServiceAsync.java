@@ -25,5 +25,7 @@ public interface ICollectionServiceAsync {
 			AsyncCallback<AddCandidateResult> callback);
 	
 	public void remove(int id, String secret, List<Candidate> candidates, AsyncCallback<Void> callback);
+
+	public void getOWL(int id, String secret, AsyncCallback<String> asyncCallback);
 		
 }
