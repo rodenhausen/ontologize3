@@ -32,7 +32,7 @@ public class SubclassesGrid extends MenuTermsGrid {
 	}
 	
 	@Override
-	protected void fire(GwtEvent<? extends EventHandler> e) {
+	public void fire(GwtEvent<? extends EventHandler> e) {
 		if(e instanceof CreateRelationEvent) {
 			final CreateRelationEvent createRelationEvent = (CreateRelationEvent)e;
 			OntologyGraph g = ModelController.getCollection().getGraph();

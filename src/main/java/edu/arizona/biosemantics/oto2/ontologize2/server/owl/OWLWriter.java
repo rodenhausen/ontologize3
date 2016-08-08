@@ -14,44 +14,69 @@ import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 
-import edu.arizona.biosemantics.common.log.LogLevel;
 import edu.arizona.biosemantics.oto2.ontologize2.server.Configuration;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Type;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
-import edu.arizona.biosemantics.oto2.oto.server.db.Query.QueryException;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 
 public class OWLWriter {
 	
-	private Collection collection;
+	private Collection c;
 	private OWLOntologyManager om = OWLManager.createOWLOntologyManager();
 	private OntologyReasoner or = new OntologyReasoner(om);
-	private OWLOntologyRetriever oret = new OWLOntologyRetriever(om, null);
-	private AnnotationsManager am = new AnnotationsManager(oret);
-	private ModuleCreator mc = new ModuleCreator(om, oret, am);
-	private AxiomManager axm = new AxiomManager(om, mc, or);
+	//private OWLOntologyRetriever oret = new OWLOntologyRetriever(om, null);
+	//private AnnotationsManager am = new AnnotationsManager(oret);
+	//private ModuleCreator mc = new ModuleCreator(om, oret, am);
+	private AxiomManager axm = new AxiomManager(om);
 	private OWLOntology o;
 	
-	public OWLWriter(Collection collection) throws OWLOntologyCreationException {
-		this.collection = collection;
-		this.o = om.createOntology(IRI.create(Configuration.etcOntologyBaseIRI + collection.getId()));
+	public OWLWriter(Collection c) throws OWLOntologyCreationException {
+		this.c = c;
+		this.o = om.createOntology(IRI.create(Configuration.etcOntologyBaseIRI + c.getId()));
 	}
 	
-	public String write(Collection collection) throws Exception {
-		OntologyGraph g = collection.getGraph();
+	public String write() throws Exception {
+		OntologyGraph g = c.getGraph();
 		addDefaultImportOntologies();
 		axm.addDefaultAxioms(o);
 		
-		for(Vertex vertex : g.getVertices()) {
+		for(Vertex v : g.getVertices()) {
 			IRITerm it = new IRITerm();
-			it.term = vertex.getValue();
-			it.iri = getIRI(vertex.getValue());
-			insertClass(it);
+			it.term = v.getValue();
+			OWLClass oc = om.getOWLDataFactory().getOWLClass(IRI.create(Configuration.etcOntologyBaseIRI + 
+					c.getId() + "#" + it.term));
+			axm.addDeclaration(o, oc);
+			axm.addLabel(o, oc, om.getOWLDataFactory().getOWLLiteral(
+					it.term, "en"));
+			axm.addCreationDate(o, oc);
 		}
 		
-		Vertex root = g.getRoot(Type.SUBCLASS_OF);
-		
+		for(Vertex v : g.getVertices()) {
+			OWLClass oc = om.getOWLDataFactory().getOWLClass(IRI.create(Configuration.etcOntologyBaseIRI + 
+					c.getId() + "#" + v.getValue()));
+			
+			List<Relation> inRs = g.getInRelations(v, Type.SUBCLASS_OF);
+			for(Relation r : inRs) {
+				OWLClass sc = om.getOWLDataFactory().getOWLClass(IRI.create(Configuration.etcOntologyBaseIRI + 
+					c.getId() + "#" + r.getSource().getValue()));
+				axm.addSuperclass(o, oc, sc);
+			}
+			inRs = g.getInRelations(v, Type.PART_OF);
+			for(Relation r : inRs) {
+				OWLClass poc = om.getOWLDataFactory().getOWLClass(IRI.create(Configuration.etcOntologyBaseIRI + 
+					c.getId() + "#" + r.getSource().getValue()));
+				axm.addPartOf(o, oc, poc);
+			}
+			inRs = g.getInRelations(v, Type.SYNONYM_OF);
+			for(Relation r : inRs) {
+				OWLClass prefc = om.getOWLDataFactory().getOWLClass(IRI.create(Configuration.etcOntologyBaseIRI + 
+						c.getId() + "#" + r.getSource().getValue()));
+				axm.addSynonym(o, v.getValue(), prefc);
+			}
+		}
+		or.checkConsistency(o);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		om.saveOntology(o, baos);
 		return baos.toString("UTF-8");
@@ -62,6 +87,8 @@ public class OWLWriter {
 		return null;
 	}
 
+	
+	/*
 	private OWLClass createOwlClass(IRITerm it) throws Exception {
 		if(it.hasIRI()) {
 			return createForeignClassModule(it);
@@ -91,7 +118,7 @@ public class OWLWriter {
 				}
 			}
 		}*/
-		return newOwlClass;
+	/*	return newOwlClass;
 	}
 	
 	private void insertClass(IRITerm it) {
@@ -127,10 +154,10 @@ public class OWLWriter {
 			axiomManager.addSuperclasses(collection, owlOntology, submission.getOntology(), owlClass, 
 					superclasses, submission.getType());
 		}
-	}
+	}*/
 
 	private void addDefaultImportOntologies() {
-		List<String> relevantOntologies = getRelevantOntologiesForCollection(collection);
+		List<String> relevantOntologies = getRelevantOntologiesForCollection(c);
 		for(String relevantOntology : relevantOntologies) {
 			//only import RO per default at this time
 			if(relevantOntology.equals("http://purl.bioontology.org/obo/OBOREL")) {

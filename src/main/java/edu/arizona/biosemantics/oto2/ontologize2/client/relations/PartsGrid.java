@@ -9,6 +9,7 @@ import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.event.shared.GwtEvent;
 import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
 import com.sencha.gxt.widget.core.client.box.MessageBox;
+import com.sencha.gxt.widget.core.client.button.TextButton;
 import com.sencha.gxt.widget.core.client.container.SimpleContainer;
 import com.sencha.gxt.widget.core.client.event.SelectEvent;
 import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
@@ -32,7 +33,7 @@ public class PartsGrid extends MenuTermsGrid {
 	}
 	
 	@Override
-	protected void fire(GwtEvent<? extends EventHandler> e) {
+	public void fire(GwtEvent<? extends EventHandler> e) {
 		if(e instanceof CreateRelationEvent) {
 			final CreateRelationEvent createRelationEvent = (CreateRelationEvent)e;
 			OntologyGraph g = ModelController.getCollection().getGraph();
@@ -45,21 +46,28 @@ public class PartsGrid extends MenuTermsGrid {
 					List<Relation> existingRelations = g.getInRelations(dest, type);
 					if(!existingRelations.isEmpty()) {
 						Vertex existSource = existingRelations.get(0).getSource();				
-						final MessageBox box = Alerter.showConfirm("Create Part", 
+						/*final MessageBox box = Alerter.showConfirm("Create Part", 
 							"\"" + dest + "\" is already a part of \"" + existSource +  "\".</br></br></br>" + 
 								"Do you agree to continue as follows: </br>" + 
 								"1) Replace \"" + dest + "\" with \"" + existSource + " " + dest + "\" as part of \"" + existSource + "\"</br>" + 
 								"2) Create \"" + source + " " + dest + "\" as part of \"" + source + "\"</br>" + 
 								"3) Create \"" + existSource + " " + dest + "\" and \"" + source + " " + dest + "\" as subclass of \"" + dest + "\".</br></br>" +
-								"If NO, please create a new term to avoid duplication of " + dest + " as a part of \"" + source + "\".");
-						box.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler() {
+								"If NO, please create a new term to avoid duplication of " + dest + " as a part of \"" + source + "\".");*/
+						final MessageBox box = Alerter.showConfirm("Create Part", 
+								"We cannot add the part \"" + dest + "\" as is to \"" + source + "\". It is already a part of \"" + existSource +  "\".</br></br>" + 
+									"Do you want to apply the <b>non-specific structure pattern</b>?");
+						TextButton yesButton = box.getButton(PredefinedButton.YES);
+						yesButton.setText("Apply");
+						TextButton noButton = box.getButton(PredefinedButton.NO);
+						noButton.setText("Do Nothing");
+						yesButton.addSelectHandler(new SelectHandler() {
 							@Override
 							public void onSelect(SelectEvent event) {
 								eventBus.fireEvent(createRelationEvent);
 								box.hide();
 							}
 						});
-						box.getButton(PredefinedButton.NO).addSelectHandler(new SelectHandler() {
+						noButton.addSelectHandler(new SelectHandler() {
 							@Override
 							public void onSelect(SelectEvent event) {
 								box.hide();

@@ -19,7 +19,7 @@ public class OntologyGraph implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	public static class Vertex implements Serializable {
+	public static class Vertex implements Serializable, Comparable<Vertex> {
 
 		private static final long serialVersionUID = 1L;
 		private String value;
@@ -67,6 +67,11 @@ public class OntologyGraph implements Serializable {
 			} else if (!value.equals(other.value))
 				return false;
 			return true;
+		}
+
+		@Override
+		public int compareTo(Vertex o) {
+			return this.value.compareTo(o.value);
 		}
 	}
 

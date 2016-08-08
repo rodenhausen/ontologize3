@@ -33,6 +33,7 @@ import com.sencha.gxt.widget.core.client.menu.MenuItem;
 
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.RelationsView;
 import edu.arizona.biosemantics.oto2.ontologize2.client.candidate.CandidateView;
+import edu.arizona.biosemantics.oto2.ontologize2.client.common.TextAreaMessageBox;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.info.ContextView;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.TreeView;
@@ -62,7 +63,7 @@ public class Ontologize extends SimpleContainer {
 							}
 							@Override
 							public void onSuccess(String result) {
-								final MultiLinePromptMessageBox box = new MultiLinePromptMessageBox("OWL", "");
+								final TextAreaMessageBox box = new TextAreaMessageBox("OWL", "");
 								box.setModal(true);
 								box.getTextArea().setText(result);
 								box.show();

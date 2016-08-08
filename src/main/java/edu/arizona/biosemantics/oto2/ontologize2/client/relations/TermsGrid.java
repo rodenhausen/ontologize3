@@ -30,11 +30,14 @@ import com.sencha.gxt.dnd.core.client.DND.Operation;
 import com.sencha.gxt.dnd.core.client.DndDropEvent;
 import com.sencha.gxt.dnd.core.client.DndDropEvent.DndDropHandler;
 import com.sencha.gxt.dnd.core.client.DropTarget;
+import com.sencha.gxt.state.client.GridFilterStateHandler;
 import com.sencha.gxt.widget.core.client.container.SimpleContainer;
 import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
 import com.sencha.gxt.widget.core.client.grid.ColumnConfig;
 import com.sencha.gxt.widget.core.client.grid.ColumnModel;
 import com.sencha.gxt.widget.core.client.grid.Grid;
+import com.sencha.gxt.widget.core.client.grid.filters.GridFilters;
+import com.sencha.gxt.widget.core.client.grid.filters.StringFilter;
 
 import edu.arizona.biosemantics.oto2.ontologize2.client.Alerter;
 import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
@@ -210,6 +213,30 @@ public class TermsGrid implements IsWidget {
 		store = new ListStore<Row>(rowProperties.key());
 		store.setAutoCommit(true);
 		this.grid = new Grid<Row>(store, createColumnModel(new LinkedList<Row>()));
+		GridFilters<Row> filters = new GridFilters<Row>();
+		filters.initPlugin(grid);
+		filters.setLocal(true);
+		StringFilter<Row> filter = new StringFilter<Row>(new ValueProvider<Row, String>() {
+			@Override
+			public String getValue(Row o) {
+				String result = "";
+				result += o.getLead().getValue() + " ";
+				for(Relation r : o.getAttached()) {
+					result += r.getDestination().getValue() + " ";
+				}
+				return result;
+			}
+			@Override
+			public void setValue(Row object, String value) {
+			}
+			@Override
+			public String getPath() {
+				return "lead";
+			}
+		});
+		filters.addFilter(filter);
+		GridFilterStateHandler<Row> handler = new GridFilterStateHandler<Row>(grid, filters);
+		handler.loadState();
 		
 		createRowContainer = createCreateRowContainer();
 
@@ -268,7 +295,7 @@ public class TermsGrid implements IsWidget {
 		bindEvents();
 	}
 
-	protected void fire(GwtEvent<? extends EventHandler> e) {
+	public void fire(GwtEvent<? extends EventHandler> e) {
 		eventBus.fireEvent(e);
 	}
 

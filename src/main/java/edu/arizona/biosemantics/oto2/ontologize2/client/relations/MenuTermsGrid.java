@@ -15,10 +15,12 @@ import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
 import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer.VerticalLayoutData;
 import com.sencha.gxt.widget.core.client.event.SelectEvent;
 import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
+import com.sencha.gxt.widget.core.client.menu.Menu;
 import com.sencha.gxt.widget.core.client.toolbar.ToolBar;
 
 import edu.arizona.biosemantics.oto2.ontologize2.client.Alerter;
 import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
+import edu.arizona.biosemantics.oto2.ontologize2.client.common.TextAreaMessageBox;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Source;
@@ -29,17 +31,24 @@ import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 
 public class MenuTermsGrid extends TermsGrid {
 
-	private ToolBar buttonBar;
+	protected ToolBar buttonBar;
 
 	public MenuTermsGrid(final EventBus eventBus, final Type type) {
 		super(eventBus, type);
 		
 		buttonBar = new ToolBar();
+		/*TextButton filterButton = new TextButton("Filter");
+		Menu filterMenu = new Menu();
+		filterButton.setMenu(filterMenu);
+		filterMenu.addIte
+		filterButton.setMenu(filter.getMenu());
+		buttonBar.add(filterButton);
+		*/
 		TextButton importButton = new TextButton("Import");
 		importButton.addSelectHandler(new SelectHandler() {
 			@Override
 			public void onSelect(SelectEvent event) {
-				final MultiLinePromptMessageBox box = new MultiLinePromptMessageBox("Import " + type.getDisplayLabel(), "");
+				final TextAreaMessageBox box = new TextAreaMessageBox("Import " + type.getDisplayLabel(), "");
 				/*box.setResizable(true);
 				box.setResize(true);
 				box.setMaximizable(true);*/
@@ -81,7 +90,7 @@ public class MenuTermsGrid extends TermsGrid {
 		exportButton.addSelectHandler(new SelectHandler() {
 			@Override
 			public void onSelect(SelectEvent event) {
-				final MultiLinePromptMessageBox box = new MultiLinePromptMessageBox("Export " + type.getDisplayLabel(), "");
+				final TextAreaMessageBox box = new TextAreaMessageBox("Export " + type.getDisplayLabel(), "");
 				/*box.setResizable(true);
 				box.setResize(true);
 				box.setMaximizable(true);*/

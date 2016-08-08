@@ -32,8 +32,7 @@ import edu.arizona.biosemantics.oto2.ontologize2.server.Configuration;
 
 public class AxiomManager  {
 
-	private OWLOntologyManager owlOntologyManager;
-	private ModuleCreator moduleCreator;
+	private OWLOntologyManager om;
 	
 	private OWLClass entityClass;
 	private OWLClass qualityClass;
@@ -48,227 +47,90 @@ public class AxiomManager  {
 	private OWLAnnotationProperty exactSynonymProperty;
 	private OWLAnnotationProperty broadSynonymProperty;
 	private DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
-	private OntologyReasoner ontologyReasoner;
 
-	public AxiomManager(OWLOntologyManager owlOntologyManager, ModuleCreator moduleCreator, OntologyReasoner ontologyReasoner) {
-		this.owlOntologyManager = owlOntologyManager;
-		this.moduleCreator = moduleCreator;
-		this.ontologyReasoner = ontologyReasoner;
+	public AxiomManager(OWLOntologyManager om) {
+		this.om = om;
 		
-		entityClass = owlOntologyManager.getOWLDataFactory().getOWLClass(IRI.create(Type.ENTITY.getIRI())); //material anatomical entity
-		qualityClass = owlOntologyManager.getOWLDataFactory().getOWLClass(IRI.create(Type.QUALITY.getIRI())); //quality
-		partOfProperty = owlOntologyManager.getOWLDataFactory().getOWLObjectProperty(IRI.create(AnnotationProperty.PART_OF.getIRI()));
-		labelProperty = owlOntologyManager.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.LABEL.getIRI()));
-		synonymProperty = owlOntologyManager.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.SYNONYM.getIRI()));
-		definitionProperty = owlOntologyManager.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.DEFINITION.getIRI()));
-		creationDateProperty = owlOntologyManager.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.CREATION_DATE.getIRI()));
-		createdByProperty = owlOntologyManager.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.CREATED_BY.getIRI()));
-		relatedSynonymProperty = owlOntologyManager.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.RELATED_SYNONYM.getIRI()));
-		narrowSynonymProperty = owlOntologyManager.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.NARROW_SYNONYM.getIRI()));
-		exactSynonymProperty = owlOntologyManager.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.EXACT_SYNONYM.getIRI()));
-		broadSynonymProperty = owlOntologyManager.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.BROAD_SYNONYM.getIRI()));
-	}
-			
-	public void addSuperclasses(Collection collection, OWLOntology owlOntology, Ontology ontology,
-			OWLClass owlClass, List<Superclass> superclasses, Type type) throws Exception {		
-		for(Superclass superclass : superclasses) {
-			OWLClass superOwlClass = owlOntologyManager.getOWLDataFactory().getOWLClass(IRI.create(superclass.getIri())); 
-			OWLAxiom subclassAxiom = owlOntologyManager.getOWLDataFactory().getOWLSubClassOfAxiom(owlClass, superOwlClass);
-			owlOntologyManager.addAxiom(owlOntology, subclassAxiom);
-
-			if(type != null) {
-				Set<OWLClass> introducedClasses = new HashSet<OWLClass> ();
-				OWLOntology moduleOntology = moduleCreator.create(collection, superOwlClass, ontology);
-				introducedClasses.addAll(moduleOntology.getClassesInSignature());
-
-				OWLClass owlSuperclass = null;
-				switch(type) {
-				case ENTITY:
-					owlSuperclass = entityClass;
-					break;
-				case QUALITY:
-					owlSuperclass = qualityClass;
-					break;
-				}	
-				if(superclass != null) {
-					for(OWLClass introducedClass : introducedClasses){
-						subclassAxiom = owlOntologyManager.getOWLDataFactory().getOWLSubClassOfAxiom(introducedClass, owlSuperclass);
-						owlOntologyManager.addAxiom(owlOntology, subclassAxiom);
-					}
-				}
-			}
-		}
-	}
-	
-	public void removeSuperclasses(OWLOntology owlOntology, OWLClass owlClass) {
-		Set<OWLClassAxiom> classAxioms = owlOntology.getAxioms(owlClass, Imports.EXCLUDED);
-		Set<OWLSubClassOfAxiom> toRemoveAxioms = new HashSet<OWLSubClassOfAxiom>();
-		for(OWLClassAxiom axiom : classAxioms) {
-			if(axiom instanceof OWLSubClassOfAxiom) {
-				OWLSubClassOfAxiom owlSubClassOfAxiom = (OWLSubClassOfAxiom)axiom;
-				OWLClassExpression superclass = owlSubClassOfAxiom.getSuperClass();
-				if(owlSubClassOfAxiom.getSubClass().equals(owlClass) && !superclass.getObjectPropertiesInSignature().contains(partOfProperty)) {
-					toRemoveAxioms.add(owlSubClassOfAxiom);
-				}
-			}
-		}
-		for(OWLSubClassOfAxiom axiom : toRemoveAxioms)
-			owlOntologyManager.removeAxiom(owlOntology, axiom);
-	}
-	
-	public void addPartOfs(Collection collection, OWLOntology owlOntology, Ontology ontology, OWLClass owlClass, List<PartOf> partOfs) throws Exception {
-		for(PartOf partOf : partOfs) {			
-			Set<OWLClass> introducedClasses = new HashSet<OWLClass> ();
-
-			IRI partOfIRI = IRI.create(partOf.getIri());
-			OWLClass wholeOwlClass = owlOntologyManager.getOWLDataFactory().getOWLClass(partOfIRI);
-			if(!partOf.getIri().startsWith(Configuration.etcOntologyBaseIRI)) {
-				wholeOwlClass = owlOntologyManager.getOWLDataFactory().getOWLClass(partOfIRI);
-				OWLOntology moduleOntology = moduleCreator.create(collection, wholeOwlClass, ontology);
-				introducedClasses.addAll(moduleOntology.getClassesInSignature());
-			}
-			if(!ontologyReasoner.isSubclass(owlOntology, wholeOwlClass, qualityClass)) {
-				OWLClassExpression partOfExpression = owlOntologyManager.getOWLDataFactory().getOWLObjectSomeValuesFrom(partOfProperty, wholeOwlClass);
-				OWLAxiom partOfAxiom = owlOntologyManager.getOWLDataFactory().getOWLSubClassOfAxiom(owlClass, partOfExpression);
-				owlOntologyManager.addAxiom(owlOntology, partOfAxiom);
-				for(OWLClass introducedClass : introducedClasses) {
-					addEntitySubclass(owlOntology, introducedClass);
-				}
-			} else {
-				throw new Exception("Can't create part of quality");
-			}
-		}
+		entityClass = om.getOWLDataFactory().getOWLClass(IRI.create(Type.ENTITY.getIRI())); //material anatomical entity
+		qualityClass = om.getOWLDataFactory().getOWLClass(IRI.create(Type.QUALITY.getIRI())); //quality
+		partOfProperty = om.getOWLDataFactory().getOWLObjectProperty(IRI.create(AnnotationProperty.PART_OF.getIRI()));
+		labelProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.LABEL.getIRI()));
+		synonymProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.SYNONYM.getIRI()));
+		definitionProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.DEFINITION.getIRI()));
+		creationDateProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.CREATION_DATE.getIRI()));
+		createdByProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.CREATED_BY.getIRI()));
+		relatedSynonymProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.RELATED_SYNONYM.getIRI()));
+		narrowSynonymProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.NARROW_SYNONYM.getIRI()));
+		exactSynonymProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.EXACT_SYNONYM.getIRI()));
+		broadSynonymProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.BROAD_SYNONYM.getIRI()));
 	}
 		
-	public void removePartOfs(OWLOntology owlOntology, OWLClass owlClass) {
-		Set<OWLClassAxiom> classAxioms = owlOntology.getAxioms(owlClass, Imports.EXCLUDED);
-		Set<OWLSubClassOfAxiom> toRemoveAxioms = new HashSet<OWLSubClassOfAxiom>();
-		for(OWLClassAxiom axiom : classAxioms) 
-			if(axiom instanceof OWLSubClassOfAxiom) {
-				OWLSubClassOfAxiom owlSubClassOfAxiom = (OWLSubClassOfAxiom)axiom;
-				OWLClassExpression superclass = owlSubClassOfAxiom.getSuperClass();
-				if(owlSubClassOfAxiom.getSubClass().equals(owlClass) && superclass.getObjectPropertiesInSignature().contains(partOfProperty)) 
-					toRemoveAxioms.add(owlSubClassOfAxiom);
-			}
-		for(OWLSubClassOfAxiom axiom : toRemoveAxioms)
-			owlOntologyManager.removeAxiom(owlOntology, axiom);
+	public void addSuperclass(OWLOntology o, OWLClass subclass, OWLClass superclass) {
+		OWLAxiom subclassAxiom = om.getOWLDataFactory().getOWLSubClassOfAxiom(subclass, superclass);
+		om.addAxiom(o, subclassAxiom);
 	}
 	
-	public void addSynonyms(OWLOntology owlOntology, OWLClass owlClass, List<Synonym> synonyms) {
-		for(Synonym synonym : synonyms) 
-			addSynonym(owlOntology, owlClass, synonym);
+	public void addPartOf(OWLOntology o, OWLClass oc, OWLClass poc) {
+		OWLClassExpression partOfExpression = 
+				om.getOWLDataFactory().getOWLObjectSomeValuesFrom(partOfProperty, poc);
+		OWLAxiom partOfAxiom = om.getOWLDataFactory().getOWLSubClassOfAxiom(oc, partOfExpression);
+		om.addAxiom(o, partOfAxiom);
 	}
 	
-	public void addSynonym(OWLOntology owlOntology, OWLClass owlClass, Synonym synonym) {
-		OWLAnnotation synonymAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(exactSynonymProperty, owlOntologyManager.getOWLDataFactory().getOWLLiteral(synonym.getSynonym(), "en"));
-		OWLAxiom synonymAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), synonymAnnotation);
-		owlOntologyManager.addAxiom(owlOntology, synonymAxiom);
-	}
-
+	public void addSynonym(OWLOntology o, String synonym, OWLClass prefc) {
+		OWLAnnotation synonymAnnotation = om.getOWLDataFactory().getOWLAnnotation(exactSynonymProperty, om.getOWLDataFactory().getOWLLiteral(synonym, "en"));
+		OWLAxiom synonymAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(prefc.getIRI(), synonymAnnotation);
+		om.addAxiom(o, synonymAxiom);
+	}	
 	
-	public void removeSynonyms(OWLOntology targetOwlOntology, OWLClass owlClass) {
-		removeAnnotationAssertionAxiom(targetOwlOntology, owlClass, exactSynonymProperty);
-	}
 	
-	public void removeSynonym(OWLOntology targetOwlOntology, OWLClass owlClass, Synonym synonym) {
-		Set<OWLAnnotationAssertionAxiom> axioms = targetOwlOntology.getAnnotationAssertionAxioms(owlClass.getIRI());
-		OWLAnnotationAssertionAxiom toRemoveAxiom = null;
-		for(OWLAnnotationAssertionAxiom axiom : axioms) 
-			if(axiom.getProperty().equals(exactSynonymProperty)) {
-				Optional<OWLLiteral> literal = axiom.getValue().asLiteral();
-				if(literal.isPresent() && literal.get().getLiteral().equals(synonym.getSynonym())) {
-					toRemoveAxiom = axiom;
-					break;
-				}
-			}
-		owlOntologyManager.removeAxiom(targetOwlOntology, toRemoveAxiom);
-	}
-	
-	public void deprecate(IRI iri, OWLOntology owlOntology) {
-		OWLAxiom depreceatedAxiom = owlOntologyManager.getOWLDataFactory().getDeprecatedOWLAnnotationAssertionAxiom(iri);
-		owlOntologyManager.applyChange(new AddAxiom(owlOntology, depreceatedAxiom));
-	}
-
-	private void removeAnnotationAssertionAxiom(OWLOntology targetOwlOntology,	OWLClass owlClass, OWLAnnotationProperty owlAnnotationProperty) {
-		Set<OWLAnnotationAssertionAxiom> axioms = targetOwlOntology.getAnnotationAssertionAxioms(owlClass.getIRI());
-		Set<OWLAnnotationAssertionAxiom> toRemoveAxioms = new HashSet<OWLAnnotationAssertionAxiom>();
-		for(OWLAnnotationAssertionAxiom axiom : axioms) 
-			if(axiom.getProperty().equals(owlAnnotationProperty)) 
-				toRemoveAxioms.add(axiom);
-		for(OWLAnnotationAssertionAxiom axiom : toRemoveAxioms)
-			owlOntologyManager.removeAxiom(targetOwlOntology, axiom);
-	}
-	
-
 	public void addDeclaration(OWLOntology owlOntology, OWLClass newOwlClass) {
-		OWLAxiom declarationAxiom = owlOntologyManager.getOWLDataFactory().getOWLDeclarationAxiom(newOwlClass);
-		owlOntologyManager.addAxiom(owlOntology, declarationAxiom);
+		OWLAxiom declarationAxiom = om.getOWLDataFactory().getOWLDeclarationAxiom(newOwlClass);
+		om.addAxiom(owlOntology, declarationAxiom);
 	}
 
 	public void addDefinition(OWLOntology owlOntology, OWLClass owlClass, String definition) {
-		OWLAnnotation definitionAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(definitionProperty, owlOntologyManager.getOWLDataFactory().getOWLLiteral(definition, "en")); 
-		OWLAxiom definitionAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), definitionAnnotation); 
-		owlOntologyManager.addAxiom(owlOntology, definitionAxiom);
+		OWLAnnotation definitionAnnotation = om.getOWLDataFactory().getOWLAnnotation(definitionProperty, om.getOWLDataFactory().getOWLLiteral(definition, "en")); 
+		OWLAxiom definitionAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), definitionAnnotation); 
+		om.addAxiom(owlOntology, definitionAxiom);
 	}
 		
-	public void removeDefinition(OWLOntology targetOwlOntology, OWLClass owlClass) {
-		removeAnnotationAssertionAxiom(targetOwlOntology, owlClass, definitionProperty);
-	}
-	
 	public void addSourceSampleComment(OWLOntology owlOntology, IRITerm it, OWLClass owlClass) {
 		if(it.hasSource() || it.hasSampleSentence()){
-			OWLAnnotation commentAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(owlOntologyManager.getOWLDataFactory().getRDFSComment(), 
-					owlOntologyManager.getOWLDataFactory().getOWLLiteral("source: " + it.sampleSentence + "[taken from: " + 
+			OWLAnnotation commentAnnotation = om.getOWLDataFactory().getOWLAnnotation(om.getOWLDataFactory().getRDFSComment(), 
+					om.getOWLDataFactory().getOWLLiteral("source: " + it.sampleSentence + "[taken from: " + 
 							it.source + "]", "en"));
-			OWLAxiom commentAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), commentAnnotation);
-			owlOntologyManager.addAxiom(owlOntology, commentAxiom);
+			OWLAxiom commentAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), commentAnnotation);
+			om.addAxiom(owlOntology, commentAxiom);
 		}
-	}
-	
-	public void removeSourceSampleComment(OWLOntology targetOwlOntology, OWLClass owlClass) {
-		OWLAnnotationProperty commentAnnotationProperty = owlOntologyManager.getOWLDataFactory().getRDFSComment();
-		Set<OWLAnnotationAssertionAxiom> axioms = targetOwlOntology.getAnnotationAssertionAxioms(owlClass.getIRI());
-		
-		OWLAnnotationAssertionAxiom oldCommentAxiom = null;
-		for(OWLAnnotationAssertionAxiom axiom : axioms) {
-			if(axiom.getProperty().equals(commentAnnotationProperty)) {
-				Optional<OWLLiteral> literal = axiom.getValue().asLiteral();
-				if(literal.isPresent() && literal.get().getLiteral().startsWith("source:")) {
-					oldCommentAxiom = axiom;
-					break;
-				}
-			}
-		}
-		if(oldCommentAxiom != null)
-			owlOntologyManager.removeAxiom(targetOwlOntology, oldCommentAxiom);
 	}
 	
 	public void addLabel(OWLOntology owlOntology, OWLClass owlClass, OWLLiteral classLabelLiteral) {
-		OWLAnnotation labelAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(labelProperty, classLabelLiteral);
-		OWLAxiom labelAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), labelAnnotation);
-		owlOntologyManager.addAxiom(owlOntology, labelAxiom);
+		OWLAnnotation labelAnnotation = om.getOWLDataFactory().getOWLAnnotation(labelProperty, classLabelLiteral);
+		OWLAxiom labelAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), labelAnnotation);
+		om.addAxiom(owlOntology, labelAxiom);
 	}
 	
 	public void addCreationDate(OWLOntology owlOntology, OWLClass owlClass) {
-		OWLAnnotation creationDateAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(creationDateProperty, owlOntologyManager.getOWLDataFactory().getOWLLiteral(dateFormat.format(new Date())));
-		OWLAxiom creationDateAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), creationDateAnnotation);
-		owlOntologyManager.addAxiom(owlOntology, creationDateAxiom);
+		OWLAnnotation creationDateAnnotation = om.getOWLDataFactory().getOWLAnnotation(creationDateProperty, om.getOWLDataFactory().getOWLLiteral(dateFormat.format(new Date())));
+		OWLAxiom creationDateAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), creationDateAnnotation);
+		om.addAxiom(owlOntology, creationDateAxiom);
 	}
 
 	public void addCreatedBy(OWLOntology owlOntology, OWLClass owlClass) {
-		OWLAnnotation createdByAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(createdByProperty, owlOntologyManager.getOWLDataFactory().getOWLLiteral(Ontologize.user));
-		OWLAxiom createdByAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), createdByAnnotation);		
-		owlOntologyManager.addAxiom(owlOntology, createdByAxiom);
+		OWLAnnotation createdByAnnotation = om.getOWLDataFactory().getOWLAnnotation(createdByProperty, om.getOWLDataFactory().getOWLLiteral(Ontologize.user));
+		OWLAxiom createdByAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), createdByAnnotation);		
+		om.addAxiom(owlOntology, createdByAxiom);
 	}
 	
 	public void addQualitySubclass(OWLOntology owlOntology, OWLClass owlClass) {
-		OWLAxiom subclassAxiom = owlOntologyManager.getOWLDataFactory().getOWLSubClassOfAxiom(owlClass, qualityClass);
-		owlOntologyManager.addAxiom(owlOntology, subclassAxiom);
+		OWLAxiom subclassAxiom = om.getOWLDataFactory().getOWLSubClassOfAxiom(owlClass, qualityClass);
+		om.addAxiom(owlOntology, subclassAxiom);
 	}
 	
 	public void addEntitySubclass(OWLOntology owlOntology, OWLClass owlClass) {
-		OWLAxiom subclassAxiom = owlOntologyManager.getOWLDataFactory().getOWLSubClassOfAxiom(owlClass, entityClass);
-		owlOntologyManager.addAxiom(owlOntology, subclassAxiom);
+		OWLAxiom subclassAxiom = om.getOWLDataFactory().getOWLSubClassOfAxiom(owlClass, entityClass);
+		om.addAxiom(owlOntology, subclassAxiom);
 	}
 
 	public void addDefaultAxioms(OWLOntology owlOntology) {
@@ -281,60 +143,60 @@ public class AxiomManager  {
 	    	</owl:AnnotationProperty>
 		 */
 		//OWLAnnotationProperty annotation = factory.getOWLAnnotationProperty(IRI.create("http://purl.obolibrary.org/obo/IAO_0000115"));
-		OWLLiteral definitionLiteral = owlOntologyManager.getOWLDataFactory().getOWLLiteral("definition");
-		OWLAnnotation definitionAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(labelProperty, definitionLiteral);
-		OWLAxiom definitionAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(definitionProperty.getIRI(), definitionAnnotation);
-		owlOntologyManager.addAxiom(owlOntology, definitionAxiom);
+		OWLLiteral definitionLiteral = om.getOWLDataFactory().getOWLLiteral("definition");
+		OWLAnnotation definitionAnnotation = om.getOWLDataFactory().getOWLAnnotation(labelProperty, definitionLiteral);
+		OWLAxiom definitionAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(definitionProperty.getIRI(), definitionAnnotation);
+		om.addAxiom(owlOntology, definitionAxiom);
 
 		/*<owl:AnnotationProperty rdf:about="http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym">
         <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has_broad_synonym</rdfs:label>
     	</owl:AnnotationProperty>*/
 		
-		OWLLiteral hasBroadSynonymLiteral = owlOntologyManager.getOWLDataFactory().getOWLLiteral("has_broad_synonym");
-		OWLAnnotation broadSynonymAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(labelProperty, hasBroadSynonymLiteral);
-		OWLAxiom broadSynonymAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(broadSynonymProperty.getIRI(), broadSynonymAnnotation);
-		owlOntologyManager.addAxiom(owlOntology, broadSynonymAxiom);
+		OWLLiteral hasBroadSynonymLiteral = om.getOWLDataFactory().getOWLLiteral("has_broad_synonym");
+		OWLAnnotation broadSynonymAnnotation = om.getOWLDataFactory().getOWLAnnotation(labelProperty, hasBroadSynonymLiteral);
+		OWLAxiom broadSynonymAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(broadSynonymProperty.getIRI(), broadSynonymAnnotation);
+		om.addAxiom(owlOntology, broadSynonymAxiom);
 
 		/*
 	    <owl:AnnotationProperty rdf:about="http://www.geneontology.org/formats/oboInOwl#hasExactSynonym">
 	        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has_exact_synonym</rdfs:label>
 	    </owl:AnnotationProperty>*/
-		OWLLiteral hasExactSynonymLiteral = owlOntologyManager.getOWLDataFactory().getOWLLiteral("has_exact_synonym");
-		OWLAnnotation exactSynonymAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(labelProperty, hasExactSynonymLiteral);
-		OWLAxiom exactSynonymAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(exactSynonymProperty.getIRI(), exactSynonymAnnotation);
-		owlOntologyManager.addAxiom(owlOntology, exactSynonymAxiom);
+		OWLLiteral hasExactSynonymLiteral = om.getOWLDataFactory().getOWLLiteral("has_exact_synonym");
+		OWLAnnotation exactSynonymAnnotation = om.getOWLDataFactory().getOWLAnnotation(labelProperty, hasExactSynonymLiteral);
+		OWLAxiom exactSynonymAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(exactSynonymProperty.getIRI(), exactSynonymAnnotation);
+		om.addAxiom(owlOntology, exactSynonymAxiom);
 
 		/*
 	    <owl:AnnotationProperty rdf:about="http://www.geneontology.org/formats/oboInOwl#hasNarrowSynonym">
 	        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has_narrow_synonym</rdfs:label>
 	    </owl:AnnotationProperty>*/
-		OWLLiteral hasNarrowSynonymLiteral = owlOntologyManager.getOWLDataFactory().getOWLLiteral("has_narrow_synonym");
-		OWLAnnotation narrowSynonymAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(labelProperty, hasNarrowSynonymLiteral);
-		OWLAxiom narrowSynonymAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(narrowSynonymProperty.getIRI(), narrowSynonymAnnotation);
-		owlOntologyManager.addAxiom(owlOntology, narrowSynonymAxiom);
+		OWLLiteral hasNarrowSynonymLiteral = om.getOWLDataFactory().getOWLLiteral("has_narrow_synonym");
+		OWLAnnotation narrowSynonymAnnotation = om.getOWLDataFactory().getOWLAnnotation(labelProperty, hasNarrowSynonymLiteral);
+		OWLAxiom narrowSynonymAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(narrowSynonymProperty.getIRI(), narrowSynonymAnnotation);
+		om.addAxiom(owlOntology, narrowSynonymAxiom);
 
 		/*
 	    <owl:AnnotationProperty rdf:about="http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym">
 	        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has_related_synonym</rdfs:label>
 	    </owl:AnnotationProperty>*/
-		OWLLiteral hasRelatedSynonymLiteral = owlOntologyManager.getOWLDataFactory().getOWLLiteral("has_related_synonym");
-		OWLAnnotation relatedSynonymAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(labelProperty, hasRelatedSynonymLiteral);
-		OWLAxiom relatedSynonymAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(relatedSynonymProperty.getIRI(), relatedSynonymAnnotation);
-		owlOntologyManager.addAxiom(owlOntology, relatedSynonymAxiom);
+		OWLLiteral hasRelatedSynonymLiteral = om.getOWLDataFactory().getOWLLiteral("has_related_synonym");
+		OWLAnnotation relatedSynonymAnnotation = om.getOWLDataFactory().getOWLAnnotation(labelProperty, hasRelatedSynonymLiteral);
+		OWLAxiom relatedSynonymAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(relatedSynonymProperty.getIRI(), relatedSynonymAnnotation);
+		om.addAxiom(owlOntology, relatedSynonymAxiom);
 
 		/*
 	    <owl:AnnotationProperty rdf:about="http://www.geneontology.org/formats/oboInOwl#created_by"/>*/
-		OWLLiteral createdByLiteral = owlOntologyManager.getOWLDataFactory().getOWLLiteral("created_by");
-		OWLAnnotation createdByAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(labelProperty, createdByLiteral);
-		OWLAxiom createdByAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(createdByProperty.getIRI(), createdByAnnotation);
-		owlOntologyManager.addAxiom(owlOntology, createdByAxiom);
+		OWLLiteral createdByLiteral = om.getOWLDataFactory().getOWLLiteral("created_by");
+		OWLAnnotation createdByAnnotation = om.getOWLDataFactory().getOWLAnnotation(labelProperty, createdByLiteral);
+		OWLAxiom createdByAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(createdByProperty.getIRI(), createdByAnnotation);
+		om.addAxiom(owlOntology, createdByAxiom);
 
 		/*
 	    <owl:AnnotationProperty rdf:about="http://www.geneontology.org/formats/oboInOwl#creation_date"/>*/
-		OWLLiteral creationDateLiteral = owlOntologyManager.getOWLDataFactory().getOWLLiteral("creation_date");
-		OWLAnnotation createionDateAnnotation = owlOntologyManager.getOWLDataFactory().getOWLAnnotation(labelProperty, creationDateLiteral);
-		OWLAxiom createionDateAxiom = owlOntologyManager.getOWLDataFactory().getOWLAnnotationAssertionAxiom(creationDateProperty.getIRI(), createionDateAnnotation);
-		owlOntologyManager.addAxiom(owlOntology, createionDateAxiom);
+		OWLLiteral creationDateLiteral = om.getOWLDataFactory().getOWLLiteral("creation_date");
+		OWLAnnotation createionDateAnnotation = om.getOWLDataFactory().getOWLAnnotation(labelProperty, creationDateLiteral);
+		OWLAxiom createionDateAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(creationDateProperty.getIRI(), createionDateAnnotation);
+		om.addAxiom(owlOntology, createionDateAxiom);
 
 		//entity and quality classes and part_of, has_part relations are imported from ro, a "general" ontology
 		//PrefixManager pm = new DefaultPrefixManager(
@@ -366,8 +228,9 @@ public class AxiomManager  {
 		*/
 		
 		//disjoint entity and quality classes
-		OWLAxiom disjointClassesAxiom = owlOntologyManager.getOWLDataFactory().getOWLDisjointClassesAxiom(entityClass, qualityClass);
-		owlOntologyManager.addAxiom(owlOntology, disjointClassesAxiom);
+		OWLAxiom disjointClassesAxiom = om.getOWLDataFactory().getOWLDisjointClassesAxiom(entityClass, qualityClass);
+		om.addAxiom(owlOntology, disjointClassesAxiom);
 	}
-	
+
+
 }

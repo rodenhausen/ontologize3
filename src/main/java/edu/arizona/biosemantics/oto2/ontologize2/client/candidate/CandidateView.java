@@ -41,6 +41,7 @@ import com.sencha.gxt.widget.core.client.tree.Tree;
 
 import edu.arizona.biosemantics.oto2.ontologize2.client.Alerter;
 import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
+import edu.arizona.biosemantics.oto2.ontologize2.client.common.TextAreaMessageBox;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateCandidateEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveCandidateEvent;
@@ -107,7 +108,7 @@ public class CandidateView extends SimpleContainer {
 		importButton.addSelectHandler(new SelectHandler() {
 			@Override
 			public void onSelect(SelectEvent event) {
-				final MultiLinePromptMessageBox box = new MultiLinePromptMessageBox("Import terms", "");
+				final TextAreaMessageBox box = new TextAreaMessageBox("Import terms", "");
 				/*box.setResizable(true);
 				box.setResize(true);
 				box.setMaximizable(true);*/

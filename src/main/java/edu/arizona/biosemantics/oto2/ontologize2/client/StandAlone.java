@@ -35,26 +35,44 @@ public class StandAlone implements EntryPoint {
 	
 	@Override
 	public void onModuleLoad() {
-		/*List<String> terms = new LinkedList<String>();
-		//terms.add("stem");
-//		terms.add("leaf");
-//		terms.add("leaflet");
-//		terms.add("stem");
-//		terms.add("fruit");
-//		terms.add("flower leaf");
-//		terms.add("organ");
-//		terms.add("structure");
-//		*/
-		final Collection c = new Collection("name", TaxonGroup.PLANT, "secret");
-		c.add(Arrays.asList(new Candidate("leaf", "/a"), new Candidate("stem", ""), 
-				new Candidate("b", ""), new Candidate("c", ""), new Candidate("h", ""), new Candidate("k", ""), 
-				new Candidate("f", ""), new Candidate("d", ""), new Candidate("i", ""), new Candidate("l", ""),
-				new Candidate("g", ""), new Candidate("e", ""), new Candidate("j", ""), new Candidate("m", "")));
-		final Vertex v1 = new Vertex("leaf");
-		final Vertex v2 = new Vertex("b");
+//		
+		final Collection c = new Collection("my collection", TaxonGroup.PLANT, "secret");
+		
+		List<String> terms = Arrays.asList(new String[] { "leaf", "stem", "plant anatomical entity", "plant structure", 
+			"plant anatomical space", "portion of plant substance", "flower", "tip", "surface", "leaflet", 
+			"pedical", "apex", "polen", "area", "pedicel"
+		});
+		
+		for(String term : terms) {
+			c.add(new Candidate(term));
+		}
+		
 		try {
-			c.getGraph().addRelation(new Relation(c.getGraph().getRoot(Type.PART_OF), v1, new Edge(Type.PART_OF, Source.USER)));
-			c.getGraph().addRelation(new Relation(v1, v2, new Edge(Type.PART_OF, Source.IMPORT)));
+			c.getGraph().addRelation(new Relation(
+					c.getGraph().getRoot(Type.SUBCLASS_OF), 
+					new Vertex("plant anatomical entity"), 
+					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
+			c.getGraph().addRelation(new Relation(
+					new Vertex("plant anatomical entity"), 
+					new Vertex("plant structure"), 
+					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
+			c.getGraph().addRelation(new Relation(
+					new Vertex("plant structure"), 
+					new Vertex("plant anatomical space"),
+					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
+			c.getGraph().addRelation(new Relation(
+					new Vertex("plant anatomical space"),
+					new Vertex("portion of plant substance"), 
+					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
+			
+			c.getGraph().addRelation(new Relation(
+					c.getGraph().getRoot(Type.PART_OF), 
+					new Vertex("leaf"),
+					new Edge(Type.PART_OF, Source.IMPORT)));
+			c.getGraph().addRelation(new Relation(
+					new Vertex("leaf"),
+					new Vertex("tip"), 
+					new Edge(Type.PART_OF, Source.IMPORT)));
 			
 			
 			collectionService.insert(c, new AsyncCallback<Collection>() {
@@ -67,9 +85,10 @@ public class StandAlone implements EntryPoint {
 					System.out.println("success");
 					
 					List<Context> contexts = new LinkedList<Context>();
-					contexts.add(new Context(0, "s1", "a i dont like this"));
-					contexts.add(new Context(1, "s2", "a tree with a big stem"));
-					contexts.add(new Context(2, "s3", "flowers are green and yellow"));
+					contexts.add(new Context(0, "some source 1", "leaf stems with wide flowers and tips"));
+					contexts.add(new Context(1, "some source 2", "plant anatomical entity are described as either "
+							+ "plant structure, plant anatomical space or portion of plant substance"));
+					contexts.add(new Context(2, "some source 3", "flowers are green and yellow"));
 					contextService.insert(0, "secret", contexts, new AsyncCallback<List<Context>>() {
 						@Override
 						public void onFailure(Throwable caught) {

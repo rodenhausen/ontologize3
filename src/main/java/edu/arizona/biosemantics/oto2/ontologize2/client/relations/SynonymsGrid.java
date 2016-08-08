@@ -10,12 +10,15 @@ import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.event.shared.GwtEvent;
 import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
 import com.sencha.gxt.widget.core.client.box.MessageBox;
+import com.sencha.gxt.widget.core.client.box.PromptMessageBox;
+import com.sencha.gxt.widget.core.client.button.TextButton;
 import com.sencha.gxt.widget.core.client.container.SimpleContainer;
 import com.sencha.gxt.widget.core.client.event.SelectEvent;
 import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
 
 import edu.arizona.biosemantics.oto2.ontologize2.client.Alerter;
 import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
+import edu.arizona.biosemantics.oto2.ontologize2.client.common.TextAreaMessageBox;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
@@ -31,10 +34,30 @@ public class SynonymsGrid extends MenuTermsGrid {
 
 	public SynonymsGrid(EventBus eventBus) {
 		super(eventBus, Type.SYNONYM_OF);
+		
+		TextButton addButton = new TextButton("Add Preferred Term");
+		addButton.addSelectHandler(new SelectHandler() {
+			@Override
+			public void onSelect(SelectEvent event) {
+				final PromptMessageBox box = Alerter.showPromptMessageBox("Add Preferred Term", "Term");
+				box.getButton(PredefinedButton.OK).addSelectHandler(new SelectHandler() {
+					@Override
+					public void onSelect(SelectEvent event) {
+						Vertex source = new Vertex(type.getRootLabel());
+						Vertex target = new Vertex(box.getTextField().getText());
+						Relation relation = new Relation(source, target, new Edge(type, Source.USER));
+						CreateRelationEvent createRelationEvent = new CreateRelationEvent(relation);
+						fire(createRelationEvent);
+					}
+				});
+			}
+		});
+		
+		buttonBar.insert(addButton, 0);
 	}
 	
 	@Override
-	protected void fire(GwtEvent<? extends EventHandler> e) {
+	public void fire(GwtEvent<? extends EventHandler> e) {
 		if(e instanceof CreateRelationEvent) {
 			final CreateRelationEvent createRelationEvent = (CreateRelationEvent)e;
 			OntologyGraph g = ModelController.getCollection().getGraph();

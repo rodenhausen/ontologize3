@@ -77,6 +77,11 @@
 		</dependency> -->
 		
 		<dependency>
+			<groupId>edu.arizona.biosemantics.common.ontology</groupId>
+		 	<artifactId>graph</artifactId>
+		  	<version>0.0.2-SNAPSHOT</version>
+		</dependency>
+		<dependency>
 			<groupId>edu.arizona.biosemantics.common</groupId>
 		 	<artifactId>context</artifactId>
 		  	<version>0.0.4-SNAPSHOT</version>

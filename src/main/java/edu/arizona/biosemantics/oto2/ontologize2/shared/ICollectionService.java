@@ -28,5 +28,5 @@ public interface ICollectionService extends RemoteService {
 	
 	public void remove(int id, String secret, List<Candidate> candidates) throws Exception;
 	
-	public String getOWL(int id, String secret);
+	public String getOWL(int id, String secret) throws Exception;
 }

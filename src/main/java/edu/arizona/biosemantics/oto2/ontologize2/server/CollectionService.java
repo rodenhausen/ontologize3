@@ -10,6 +10,7 @@ import java.util.List;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
+import edu.arizona.biosemantics.oto2.ontologize2.server.owl.OWLWriter;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.AddCandidateResult;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.ICollectionService;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Candidate;
@@ -123,9 +124,9 @@ public class CollectionService extends RemoteServiceServlet implements ICollecti
 	}
 
 	@Override
-	public String getOWL(int id, String secret) {
-		
-		
-		return "owl";
+	public String getOWL(int collectionId, String secret) throws Exception {
+		Collection c = this.get(collectionId, secret);
+		OWLWriter ow = new OWLWriter(c);
+		return ow.write();
 	}
 }

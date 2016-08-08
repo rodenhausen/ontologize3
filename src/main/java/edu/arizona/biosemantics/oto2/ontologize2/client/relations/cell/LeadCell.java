@@ -13,6 +13,7 @@ import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.sencha.gxt.core.client.ValueProvider;
 import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
 import com.sencha.gxt.widget.core.client.box.MessageBox;
+import com.sencha.gxt.widget.core.client.box.PromptMessageBox;
 import com.sencha.gxt.widget.core.client.event.SelectEvent;
 import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
 import com.sencha.gxt.widget.core.client.menu.Item;
@@ -21,12 +22,16 @@ import com.sencha.gxt.widget.core.client.menu.MenuItem;
 
 import edu.arizona.biosemantics.oto2.ontologize2.client.Alerter;
 import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.SelectTermEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Candidate;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Source;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 
 public class LeadCell extends MenuExtendedCell<Vertex> {
@@ -63,7 +68,24 @@ public class LeadCell extends MenuExtendedCell<Vertex> {
 		Menu menu = new Menu();
 		final OntologyGraph g = ModelController.getCollection().getGraph();
 		final Row row = termsGrid.getRow(rowIndex);
-			
+		
+		MenuItem addItem = new MenuItem("Add attached term");
+		addItem.addSelectionHandler(new SelectionHandler<Item>() {
+			@Override
+			public void onSelection(SelectionEvent<Item> event) {
+				OntologyGraph g = ModelController.getCollection().getGraph();
+				
+				final PromptMessageBox box = Alerter.showPromptMessageBox("Attach term", "Attach term");
+				box.getButton(PredefinedButton.OK).addSelectHandler(new SelectHandler() {
+					@Override
+					public void onSelect(SelectEvent event) {
+						termsGrid.fire(new CreateRelationEvent(
+								new Relation(row.getLead(), new Vertex(box.getTextField().getText()), new Edge(termsGrid.getType(), Source.USER))));
+					}
+				});
+			}
+		});
+		
 		MenuItem removeItem = new MenuItem("Remove all attached terms");
 		removeItem.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
@@ -90,8 +112,9 @@ public class LeadCell extends MenuExtendedCell<Vertex> {
 				eventBus.fireEvent(new SelectTermEvent(row.getLead().getValue()));
 			}
 		});
-		menu.add(context);
+		menu.add(addItem);
 		menu.add(removeItem);
+		menu.add(context);
 		
 		return menu;
 	}
