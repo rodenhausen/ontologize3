@@ -103,8 +103,12 @@ public class TreeView extends SimpleContainer {
 		titleLabel.getElement().getStyle().setColor("#15428b");
 		
 		store = new TreeStore<VertexTreeNode>(vertexTreeNodeProperties.key());
-		ColumnConfig<VertexTreeNode, Vertex> valueCol = new ColumnConfig<VertexTreeNode, Vertex>(vertexTreeNodeProperties.vertex(), 300, "Tree");
+		ColumnConfig<VertexTreeNode, Vertex> valueCol = new ColumnConfig<VertexTreeNode, Vertex>(vertexTreeNodeProperties.vertex(), 300, "");
 		valueCol.setCell(new VertexCell(eventBus, this, type));
+		valueCol.setSortable(false);
+		valueCol.setMenuDisabled(true);
+		valueCol.setHideable(false);
+		valueCol.setGroupable(false);
 		List<ColumnConfig<VertexTreeNode, ?>> list = new ArrayList<ColumnConfig<VertexTreeNode, ?>>();
 		list.add(valueCol);
 		ColumnModel<VertexTreeNode> cm = new ColumnModel<VertexTreeNode>(list);
@@ -145,7 +149,7 @@ public class TreeView extends SimpleContainer {
 
 	private Menu createContextMenu() {
 		Menu menu = new Menu();
-		MenuItem context = new MenuItem("Show Context");
+		MenuItem context = new MenuItem("Show Term Context");
 		context.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {

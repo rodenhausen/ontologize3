@@ -102,6 +102,7 @@ public class MenuTermsGrid extends TermsGrid {
 			@Override
 			public void onSelect(SelectEvent event) {
 				final TextAreaMessageBox box = new TextAreaMessageBox("Import " + type.getDisplayLabel(), "");
+				box.getTextArea().setEmptyText(getDefaultImportText());
 				/*box.setResizable(true);
 				box.setResize(true);
 				box.setMaximizable(true);*/
@@ -213,6 +214,10 @@ public class MenuTermsGrid extends TermsGrid {
 		//buttonBar.add(removeButton);
 	}
 	
+	protected String getDefaultImportText() {
+		return "";	
+	}
+
 	protected void setFilter(boolean activate) {
 		checkFilterItem.setChecked(activate, true);
 		if(!activate) {

@@ -2,15 +2,24 @@ package edu.arizona.biosemantics.oto2.ontologize2.client.relations;
 
 import java.util.List;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.BorderStyle;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.event.shared.GwtEvent;
+import com.google.gwt.safehtml.shared.SafeHtmlUtils;
+import com.google.gwt.user.client.ui.HTML;
+import com.sencha.gxt.widget.core.client.ContentPanel;
+import com.sencha.gxt.widget.core.client.Dialog;
 import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
 import com.sencha.gxt.widget.core.client.box.MessageBox;
+import com.sencha.gxt.widget.core.client.box.MessageBox.MessageBoxAppearance;
 import com.sencha.gxt.widget.core.client.button.TextButton;
+import com.sencha.gxt.widget.core.client.container.AccordionLayoutContainer;
+import com.sencha.gxt.widget.core.client.container.AccordionLayoutContainer.AccordionLayoutAppearance;
 import com.sencha.gxt.widget.core.client.container.SimpleContainer;
+import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
 import com.sencha.gxt.widget.core.client.event.SelectEvent;
 import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
 
@@ -28,6 +37,8 @@ import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 
 public class PartsGrid extends MenuTermsGrid {
 
+	private AccordionLayoutAppearance appearance = GWT.<AccordionLayoutAppearance> create(AccordionLayoutAppearance.class);
+	
 	public PartsGrid(EventBus eventBus) {
 		super(eventBus, Type.PART_OF);
 	}
@@ -53,9 +64,32 @@ public class PartsGrid extends MenuTermsGrid {
 								"2) Create \"" + source + " " + dest + "\" as part of \"" + source + "\"</br>" + 
 								"3) Create \"" + existSource + " " + dest + "\" and \"" + source + " " + dest + "\" as subclass of \"" + dest + "\".</br></br>" +
 								"If NO, please create a new term to avoid duplication of " + dest + " as a part of \"" + source + "\".");*/
-						final MessageBox box = Alerter.showConfirm("Create Part", 
-								"We cannot add the part \"" + dest + "\" as is to \"" + source + "\". It is already a part of \"" + existSource +  "\".</br></br>" + 
-									"Do you want to apply the <b>non-specific structure pattern</b>?");
+						final Dialog box = new Dialog();
+						box.setHeadingText("Create Part");
+						box.setTitle("Create Part");
+						box.setPredefinedButtons(PredefinedButton.YES, PredefinedButton.NO);
+						VerticalLayoutContainer vlc = new VerticalLayoutContainer();
+						AccordionLayoutContainer alc = new AccordionLayoutContainer();
+						vlc.add(new HTML(SafeHtmlUtils.fromTrustedString("We cannot add the part <i>" + dest + "</i> as is to <i>" + 
+								source + "</i>. It is already a part of <i>" +  existSource +  "</i>.</br></br>" + 
+									"Do you want to apply the <b>non-specific structure pattern</b>?")));
+						vlc.add(alc);
+						
+						ContentPanel cp = new ContentPanel(appearance);
+					    cp.setAnimCollapse(false);
+					    cp.setHeadingText("We will do the following for you");
+					    cp.add(new HTML("1) Replace <i>" + dest + "</i> with <i>" + existSource + " " + dest + "</i> as part of <i>" + existSource + "</i></br>" + 
+								"2) Create <i>" + source + " " + dest + "</i> as part of <i>" + source + "</i></br>" + 
+								"3) Create <i>" + existSource + " " + dest + "</i> and <i>" + source + " " + dest + "</i> as subclass of <i>" + dest + "</i>."));
+					    alc.add(cp);
+					    
+						box.setWidget(vlc);
+						
+						
+//						final MessageBox box = Alerter.showConfirm("Create Part", 
+//								"We cannot add the part <i>" + dest + "</i> as is to <i>" + source + "</i>. It is already a part of <i>" + 
+//										existSource +  "</i>.</br></br>" + 
+//									"Do you want to apply the <b>non-specific structure pattern</b>?");
 						TextButton yesButton = box.getButton(PredefinedButton.YES);
 						yesButton.setText("Apply");
 						TextButton noButton = box.getButton(PredefinedButton.NO);
@@ -73,6 +107,7 @@ public class PartsGrid extends MenuTermsGrid {
 								box.hide();
 							}
 						});
+						box.show();
 					} else {
 						eventBus.fireEvent(createRelationEvent);
 					}
@@ -135,5 +170,10 @@ public class PartsGrid extends MenuTermsGrid {
 	@Override
 	protected SimpleContainer createCreateRowContainer() {
 		return null;
+	}
+	
+	@Override
+	protected String getDefaultImportText() {
+		return "parent, part 1, part 2, ...[e.g. flower, calyx, corolla]"; 
 	}
 }

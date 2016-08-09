@@ -19,6 +19,7 @@ import com.google.gwt.editor.client.Editor.Path;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.event.shared.GwtEvent;
+import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.client.ui.IsWidget;
 import com.google.gwt.user.client.ui.Widget;
 import com.sencha.gxt.core.client.ValueProvider;
@@ -517,7 +518,7 @@ public class TermsGrid implements IsWidget {
 			public String getPath() {
 				return "lead";
 			}
-		}, colWidth, type.getSourceLabel());
+		}, colWidth, SafeHtmlUtils.fromTrustedString("<b>" + type.getSourceLabel() + "</b>"));
 		column1.setSortable(false);
 		column1.setHideable(false);
 		column1.setGroupable(false);
@@ -567,7 +568,7 @@ public class TermsGrid implements IsWidget {
 			public String getPath() {
 				return "attached-" + i;
 			}
-		}, colWidth, type.getTargetLabel() + "-" + i);
+		}, colWidth, SafeHtmlUtils.fromTrustedString("<b>" + type.getTargetLabel() + "-" + i + "</b>"));
 		AttachedCell cell = createAttachedCell(i - 1);
 		config.setCell(cell);
 		config.setSortable(false);

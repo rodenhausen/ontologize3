@@ -198,8 +198,8 @@ public class CandidateView extends SimpleContainer {
 					}
 					
 					if(ModelController.getCollection().contains(term)) {
-						Alerter.showAlert("Candidate exists", "Candidate + \"" + term + "\" already exists at \"" +
-								ModelController.getCollection().getCandidates().getPath(term) + "\"");
+						Alerter.showAlert("Candidate exists", "Candidate + <i>" + term + "</i> already exists at <i>" +
+								ModelController.getCollection().getCandidates().getPath(term) + "</i>");
 						return;
 					} else {
 						if(path.isEmpty()) {
@@ -231,7 +231,7 @@ public class CandidateView extends SimpleContainer {
 	
 	private Menu createContextMenu() {
 		Menu menu = new Menu();
-		MenuItem context = new MenuItem("Show Context");
+		MenuItem context = new MenuItem("Show Term Context");
 		context.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {

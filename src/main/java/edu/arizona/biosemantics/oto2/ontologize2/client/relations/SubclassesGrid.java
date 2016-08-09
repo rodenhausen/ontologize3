@@ -48,10 +48,10 @@ public class SubclassesGrid extends MenuTermsGrid {
 						for(Relation exist : existingRelations) 
 							existSources.add(exist.getSource());
 						final MessageBox box = Alerter.showConfirm("Create Subclass", 
-								"\"" + dest + "\" is already a subclass of " + existingRelations.size() + " superclasses: \"" +
-										Alerter.collapseTermsAsString(existSources) + "\".</br></br></br>" +
-										"Do you still want to create \"" + dest + "\" as subclass of \"" + source + "\"?</br></br>" +
-										"If NO, please create a new term then add as a subclass of " + source + ".");
+								"<i>" + dest + "</i> is already a subclass of " + existingRelations.size() + " superclasses: <i>" +
+										Alerter.collapseTermsAsString(existSources) + "</i>.</br></br></br>" +
+										"Do you still want to add <i>" + dest + "</i> as subclass of <i>" + source + "</i>?</br></br>" +
+										"If NO, please create a new term then add as a subclass of <i>" + source + "</i>.");
 						box.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler() {
 							@Override
 							public void onSelect(SelectEvent event) {
@@ -140,5 +140,10 @@ public class SubclassesGrid extends MenuTermsGrid {
 					grid.getStore().update(row);
 			}
 		}
+	}
+	
+	@Override
+	protected String getDefaultImportText() {
+		return "superclass, subclass 1, subclass 2, ...[e.g. fruits, simple fruits, aggregate fruits, composite fruits]"; 
 	}
 }

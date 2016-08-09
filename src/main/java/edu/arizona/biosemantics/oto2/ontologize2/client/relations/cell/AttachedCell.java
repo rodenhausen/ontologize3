@@ -66,7 +66,7 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 		final Row row = termsGrid.getRow(rowIndex);
 		final Relation r = row.getAttached().get(columnIndex - 1);
 		Menu menu = new Menu();
-		MenuItem removeItem = new MenuItem("Remove this term");
+		MenuItem removeItem = new MenuItem("Remove this " + termsGrid.getType().getTargetLabel());
 		removeItem.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
@@ -82,15 +82,15 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 				}
 			}
 		});
-		MenuItem context = new MenuItem("Show Context");
+		MenuItem context = new MenuItem("Show Term Context");
 		context.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
 				eventBus.fireEvent(new SelectTermEvent(r.getDestination().getValue()));
 			}
 		});
-		menu.add(context);
 		menu.add(removeItem);
+		menu.add(context);
 		return menu;
 	}
 	
@@ -173,7 +173,7 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 		}
 		switch(r.getEdge().getSource()) {
 			case IMPORT:
-				backgroundColor = "#0033cc"; //blue
+				//backgroundColor = "#0033cc"; //blue
 				break;
 			case USER:
 				break;

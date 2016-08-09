@@ -45,7 +45,7 @@ public class LeadCell extends MenuExtendedCell<Vertex> {
 				"background: no-repeat 0 0;" +
 				"background-image:{6};" +
 				"background-color:{5};" +
-				"\">{3}<a class=\"{2}\" style=\"height: 22px;\"></a>" +
+				"\"><b>{3}</b><a class=\"{2}\" style=\"height: 22px;\"></a>" +
 				"</div>" +
 				"</div>")
 		SafeHtml cell(String grandParentStyleClass, String parentStyleClass,
@@ -69,13 +69,14 @@ public class LeadCell extends MenuExtendedCell<Vertex> {
 		final OntologyGraph g = ModelController.getCollection().getGraph();
 		final Row row = termsGrid.getRow(rowIndex);
 		
-		MenuItem addItem = new MenuItem("Add attached term");
+		MenuItem addItem = new MenuItem("Add " + termsGrid.getType().getTargetLabel());
 		addItem.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
 				OntologyGraph g = ModelController.getCollection().getGraph();
 				
-				final PromptMessageBox box = Alerter.showPromptMessageBox("Attach term", "Attach term");
+				final PromptMessageBox box = Alerter.showPromptMessageBox("Add " + termsGrid.getType().getTargetLabel(), 
+						"Add " + termsGrid.getType().getTargetLabel());
 				box.getButton(PredefinedButton.OK).addSelectHandler(new SelectHandler() {
 					@Override
 					public void onSelect(SelectEvent event) {
@@ -86,7 +87,7 @@ public class LeadCell extends MenuExtendedCell<Vertex> {
 			}
 		});
 		
-		MenuItem removeItem = new MenuItem("Remove all attached terms");
+		MenuItem removeItem = new MenuItem("Remove all " + termsGrid.getType().getTargetLabelPlural());
 		removeItem.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
@@ -105,7 +106,7 @@ public class LeadCell extends MenuExtendedCell<Vertex> {
 				} 
 			}
 		});
-		MenuItem context = new MenuItem("Show Context");
+		MenuItem context = new MenuItem("Show Term Context");
 		context.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
@@ -158,7 +159,7 @@ public class LeadCell extends MenuExtendedCell<Vertex> {
 	@Override
 	public void render(Context context, Vertex value, SafeHtmlBuilder sb) {
 		SafeHtml rendered = templates.cell("", columnHeaderStyles.headInner(),
-				columnHeaderStyles.headButton(), valueProvider.getValue(value), "", "#009933", "");
+				columnHeaderStyles.headButton(), valueProvider.getValue(value), "", "", "");
 		sb.append(rendered);
 	}
 

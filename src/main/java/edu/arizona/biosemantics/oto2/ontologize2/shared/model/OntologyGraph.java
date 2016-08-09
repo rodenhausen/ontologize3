@@ -78,21 +78,23 @@ public class OntologyGraph implements Serializable {
 	public static class Edge implements Serializable {
 
 		public static enum Type {
-			SUBCLASS_OF("is-a", "superclass", "subclass", "is-a hierarchy", "Class-Thing"), 
-					PART_OF("part", "parent", "part", "part-of hierarchy", "Part-Thing"), 
-					SYNONYM_OF("synonym", "preferred term", "synonym", "synonym-hierarchy", "Synonym-Thing");
+			SUBCLASS_OF("category", "superclass", "subclass", "subclasses", "category hierarchy", "Class-Thing"), 
+					PART_OF("part", "parent", "part", "parts", "part-of hierarchy", "Whole Organism"), 
+					SYNONYM_OF("synonym", "preferred term", "synonym", "synonyms", "synonym-hierarchy", "Synonym-Root");
 
 			private String displayLabel;
 			private String sourceLabel;
 			private String targetLabel;
 			private String treeLabel;
 			private String rootLabel;
+			private String targetLabelPlural;
 
 			private Type(String displayLabel, String sourceLabel,
-					String targetLabel, String treeLabel, String rootLabel) {
+					String targetLabel, String targetLabelPlural, String treeLabel, String rootLabel) {
 				this.displayLabel = displayLabel;
 				this.sourceLabel = sourceLabel;
 				this.targetLabel = targetLabel;
+				this.targetLabelPlural = targetLabelPlural;
 				this.treeLabel = treeLabel;
 				this.rootLabel = rootLabel;
 			}
@@ -115,6 +117,10 @@ public class OntologyGraph implements Serializable {
 
 			public String getRootLabel() {
 				return rootLabel;
+			}
+
+			public String getTargetLabelPlural() {
+				return targetLabelPlural;
 			}
 		}
 
@@ -241,17 +247,17 @@ public class OntologyGraph implements Serializable {
 		List<Relation> destOut = this.getInRelations(dest, Type.SYNONYM_OF);
 		
 		if(dest.equals(root))
-			throw new Exception("\"" + root + "\" can not be used as synonym");
+			throw new Exception("<i>" + root + "</i> can not be used as synonym");
 		if(src.equals(root) && !destIn.isEmpty() && destIn.contains(root))
-			throw new Exception("\"" + dest + "\" is already used as preferred term");
+			throw new Exception("<i>" + dest + "</i> is already used as preferred term");
 		if(src.equals(root) && !destIn.isEmpty() && !destIn.contains(root))
-			throw new Exception("\"" + dest + "\" is already used as synonym");
+			throw new Exception("<i>" + dest + "</i> is already used as synonym");
 		if(!src.equals(root) && srcIn.isEmpty())
-			throw new Exception("\"" + src + "\" is not attached to \"" + root + "\"");
+			throw new Exception("<i>" + src + "</i> is not attached to \"" + root + "\"");
 		if(!src.equals(root) && !destIn.isEmpty() && destIn.contains(root))
-			throw new Exception("\"" + dest + "\" is already used as preferred term");
+			throw new Exception("<i>" + dest + "</i> is already used as preferred term");
 		if(!src.equals(root) && !destIn.isEmpty() && !destIn.contains(root))
-			throw new Exception("\"" + dest + "\" is already used as synonym");
+			throw new Exception("<i>" + dest + "</i> is already used as synonym");
 		return true;
 	}
 	

@@ -30,7 +30,7 @@ public class RelationsView extends SimpleContainer {
 		TabPanel tabPanel = new TabPanel();
 		tabPanel.setTabScroll(true);
 		tabPanel.setAnimScroll(true);
-		tabPanel.add(subclassGrid, new TabItemConfig("Is-a", false));
+		tabPanel.add(subclassGrid, new TabItemConfig("Categories", false));
 		tabPanel.add(partsGrid, new TabItemConfig("Parts", false));
 		tabPanel.add(synonymGrid, new TabItemConfig("Synonyms", false));
 		this.add(tabPanel);

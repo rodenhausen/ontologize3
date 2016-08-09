@@ -123,4 +123,9 @@ public class SynonymsGrid extends MenuTermsGrid {
 		createRowContainer.getElement().getStyle().setBackgroundColor("#ffffcc");
 		return createRowContainer;
 	}
+	
+	@Override
+	protected String getDefaultImportText() {
+		return "preferred term, synonym 1, synonym 2, ...[e.g. apex, tip, appex]"; 
+	}
 }
