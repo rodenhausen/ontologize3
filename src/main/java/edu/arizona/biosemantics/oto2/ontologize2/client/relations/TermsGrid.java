@@ -213,30 +213,6 @@ public class TermsGrid implements IsWidget {
 		store = new ListStore<Row>(rowProperties.key());
 		store.setAutoCommit(true);
 		this.grid = new Grid<Row>(store, createColumnModel(new LinkedList<Row>()));
-		GridFilters<Row> filters = new GridFilters<Row>();
-		filters.initPlugin(grid);
-		filters.setLocal(true);
-		StringFilter<Row> filter = new StringFilter<Row>(new ValueProvider<Row, String>() {
-			@Override
-			public String getValue(Row o) {
-				String result = "";
-				result += o.getLead().getValue() + " ";
-				for(Relation r : o.getAttached()) {
-					result += r.getDestination().getValue() + " ";
-				}
-				return result;
-			}
-			@Override
-			public void setValue(Row object, String value) {
-			}
-			@Override
-			public String getPath() {
-				return "lead";
-			}
-		});
-		filters.addFilter(filter);
-		GridFilterStateHandler<Row> handler = new GridFilterStateHandler<Row>(grid, filters);
-		handler.loadState();
 		
 		createRowContainer = createCreateRowContainer();
 
@@ -542,6 +518,10 @@ public class TermsGrid implements IsWidget {
 				return "lead";
 			}
 		}, colWidth, type.getSourceLabel());
+		column1.setSortable(false);
+		column1.setHideable(false);
+		column1.setGroupable(false);
+		column1.setMenuDisabled(true);
 		LeadCell cell = createLeadCell();
 		column1.setCell(cell);
 		columns.add(column1);
@@ -590,7 +570,10 @@ public class TermsGrid implements IsWidget {
 		}, colWidth, type.getTargetLabel() + "-" + i);
 		AttachedCell cell = createAttachedCell(i - 1);
 		config.setCell(cell);
-		
+		config.setSortable(false);
+		config.setHideable(false);
+		config.setGroupable(false);
+		config.setMenuDisabled(true);
 		return config;
 	}
 	
