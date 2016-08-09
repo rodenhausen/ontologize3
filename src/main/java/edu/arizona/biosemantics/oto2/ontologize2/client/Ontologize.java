@@ -87,7 +87,7 @@ public class Ontologize extends SimpleContainer {
 		
 		CandidateView candidateView = new CandidateView(eventBus);
 		ContentPanel cp = new ContentPanel();
-		cp.setHeadingText("Candidates");
+		cp.setHeadingText("Candidate Terms");
 		cp.add(candidateView);
 		BorderLayoutData d = new BorderLayoutData(.30);
 		d.setMargins(new Margins(0, 0, 0, 0));
@@ -98,7 +98,7 @@ public class Ontologize extends SimpleContainer {
 		
 		VisualizationView visualizationView = new VisualizationView(eventBus);
 		cp = new ContentPanel();
-		cp.setHeadingText("Trees");
+		cp.setHeadingText("Tree Visualizations");
 		cp.add(visualizationView);
 		d = new BorderLayoutData(.30);
 		d.setMargins(new Margins(0, 0, 0, 0));
@@ -120,7 +120,7 @@ public class Ontologize extends SimpleContainer {
 		
 		RelationsView relationsView = new RelationsView(eventBus);
 		cp = new ContentPanel();
-		cp.setHeadingText("Relations");
+		cp.setHeadingText("Relations between Terms");
 		cp.add(relationsView);
 		d = new BorderLayoutData();
 		d.setMargins(new Margins(0, 0, 0, 0));

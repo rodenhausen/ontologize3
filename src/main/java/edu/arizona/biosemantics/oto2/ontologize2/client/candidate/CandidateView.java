@@ -104,46 +104,46 @@ public class CandidateView extends SimpleContainer {
 		};
 		
 		buttonBar = new ToolBar();
-		TextButton importButton = new TextButton("Import");
-		importButton.addSelectHandler(new SelectHandler() {
-			@Override
-			public void onSelect(SelectEvent event) {
-				final TextAreaMessageBox box = new TextAreaMessageBox("Import terms", "");
-				/*box.setResizable(true);
-				box.setResize(true);
-				box.setMaximizable(true);*/
-				box.setModal(true);
-				box.getButton(PredefinedButton.OK).addSelectHandler(new SelectHandler() {
-					@Override
-					public void onSelect(SelectEvent event) {
-						String input = box.getValue();
-						String[] lines = input.split("\\n");
-						List<Candidate> candidates = new LinkedList<Candidate>();
-						for(String line : lines) {
-							String[] candidatePath = line.split(",");
-							if(candidatePath.length == 1) {
-								String candidate = candidatePath[0];
-								if(!ModelController.getCollection().getCandidates().contains(candidate))
-									candidates.add(new Candidate(candidate));
-								else
-									Alerter.showAlert("Candidate exists", "Candidate + \"" + candidate + "\" already exists at \"" +
-											ModelController.getCollection().getCandidates().getPath(candidate) + "\"");
-							} else if(candidatePath.length >= 2) {
-								String candidate = candidatePath[0];
-								if(!ModelController.getCollection().getCandidates().contains(candidate))
-									candidates.add(new Candidate(candidatePath[0], candidatePath[1]));
-								else
-									Alerter.showAlert("Candidate exists", "Candidate + \"" + candidate + "\" already exists at \"" +
-											ModelController.getCollection().getCandidates().getPath(candidate) + "\"");
-							}
-						}
-						
-						eventBus.fireEvent(new CreateCandidateEvent(candidates));
-					}
-				});
-				box.show();
-			}
-		});
+//		TextButton importButton = new TextButton("Import");
+//		importButton.addSelectHandler(new SelectHandler() {
+//			@Override
+//			public void onSelect(SelectEvent event) {
+//				final TextAreaMessageBox box = new TextAreaMessageBox("Import terms", "");
+//				/*box.setResizable(true);
+//				box.setResize(true);
+//				box.setMaximizable(true);*/
+//				box.setModal(true);
+//				box.getButton(PredefinedButton.OK).addSelectHandler(new SelectHandler() {
+//					@Override
+//					public void onSelect(SelectEvent event) {
+//						String input = box.getValue();
+//						String[] lines = input.split("\\n");
+//						List<Candidate> candidates = new LinkedList<Candidate>();
+//						for(String line : lines) {
+//							String[] candidatePath = line.split(",");
+//							if(candidatePath.length == 1) {
+//								String candidate = candidatePath[0];
+//								if(!ModelController.getCollection().getCandidates().contains(candidate))
+//									candidates.add(new Candidate(candidate));
+//								else
+//									Alerter.showAlert("Candidate exists", "Candidate + \"" + candidate + "\" already exists at \"" +
+//											ModelController.getCollection().getCandidates().getPath(candidate) + "\"");
+//							} else if(candidatePath.length >= 2) {
+//								String candidate = candidatePath[0];
+//								if(!ModelController.getCollection().getCandidates().contains(candidate))
+//									candidates.add(new Candidate(candidatePath[0], candidatePath[1]));
+//								else
+//									Alerter.showAlert("Candidate exists", "Candidate + \"" + candidate + "\" already exists at \"" +
+//											ModelController.getCollection().getCandidates().getPath(candidate) + "\"");
+//							}
+//						}
+//						
+//						eventBus.fireEvent(new CreateCandidateEvent(candidates));
+//					}
+//				});
+//				box.show();
+//			}
+//		});
 		
 		TextButton removeButton = new TextButton("Remove");
 		Menu removeMenu = new Menu();
@@ -166,7 +166,7 @@ public class CandidateView extends SimpleContainer {
 		removeMenu.add(allRemove);
 		removeButton.setMenu(removeMenu);
 		
-		buttonBar.add(importButton);
+		//buttonBar.add(importButton);
 		buttonBar.add(removeButton);
 		
 		HorizontalLayoutContainer hlc = new HorizontalLayoutContainer();
@@ -175,25 +175,46 @@ public class CandidateView extends SimpleContainer {
 		addButton.addSelectHandler(new SelectHandler() {
 			@Override
 			public void onSelect(SelectEvent event) {
-				final String newTerm = termField.getValue().trim();
-				if(newTerm.isEmpty()) 
+				final String newTerms = termField.getValue().trim();
+				if(newTerms.isEmpty()) {
 					Alerter.showAlert("Add Term", "Term field is empty");
-				else if(ModelController.getCollection().contains(newTerm)) 
-					Alerter.showAlert("Add Term", "Term already exists");
-				else
-					if(!ModelController.getCollection().contains(newTerm)) {
-						tree.getSelectionModel().getSelectedItem();
-						
-						BucketTreeNode bucketNode = getSelectedBucket();
-						if(bucketNode != null) {
-							eventBus.fireEvent(new CreateCandidateEvent(new Candidate(newTerm, bucketNode.getPath())));
-						} else {
-							eventBus.fireEvent(new CreateCandidateEvent(new Candidate(newTerm)));
-						}
-						termField.setValue("");
-					} else {
-						Alerter.showAlert("Create Term", "Term already exists");
+					return;
+				}
+				
+				String[] newTermsArray = newTerms.split(",");
+				List<Candidate> candidates = new LinkedList<Candidate>();
+				for(String newTerm : newTermsArray) {
+					int lastSeparatorIndex = newTerm.lastIndexOf("/");
+					if(newTerm.length() == lastSeparatorIndex + 1) {
+						Alerter.showAlert("Add term", "Malformed input to add term");
+						return;
 					}
+					
+					String term = newTerm.trim();
+					String path = ""; 
+					if(lastSeparatorIndex != -1) {
+						term = newTerm.substring(lastSeparatorIndex + 1).trim();
+						path = newTerm.substring(0, lastSeparatorIndex).trim();	
+					}
+					
+					if(ModelController.getCollection().contains(term)) {
+						Alerter.showAlert("Candidate exists", "Candidate + \"" + term + "\" already exists at \"" +
+								ModelController.getCollection().getCandidates().getPath(term) + "\"");
+						return;
+					} else {
+						if(path.isEmpty()) {
+							BucketTreeNode bucketNode = getSelectedBucket();
+							if(bucketNode != null)
+								path = bucketNode.getPath();
+						} else {
+							if(!path.startsWith("/"))
+								path = "/" + path;
+						}
+						candidates.add(new Candidate(term, path));
+					}
+				}
+				termField.setValue("");
+				eventBus.fireEvent(new CreateCandidateEvent(candidates));
 			}
 		});
 		hlc.add(termField, new HorizontalLayoutData(1, -1));
@@ -204,7 +225,7 @@ public class CandidateView extends SimpleContainer {
 		VerticalLayoutContainer vlc = new VerticalLayoutContainer();
 		vlc.add(buttonBar, new VerticalLayoutData(1, -1));
 		vlc.add(tree, new VerticalLayoutData(1, 1));
-		vlc.add(field, new VerticalLayoutData(1, 40));
+		vlc.add(field, new VerticalLayoutData(1, 25));
 		this.add(vlc);
 	}
 	

@@ -36,84 +36,84 @@ public class StandAlone implements EntryPoint {
 	@Override
 	public void onModuleLoad() {
 //		
-//		final Collection c = new Collection("my collection", TaxonGroup.PLANT, "secret");
-//		
-//		List<String> terms = Arrays.asList(new String[] { "leaf", "stem", "plant anatomical entity", "plant structure", 
-//			"plant anatomical space", "portion of plant substance", "flower", "tip", "surface", "leaflet", 
-//			"pedical", "apex", "polen", "area", "pedicel"
-//		});
-//		
-//		for(String term : terms) {
-//			c.add(new Candidate(term));
-//		}
-//		
-//		try {
-//			c.getGraph().addRelation(new Relation(
-//					c.getGraph().getRoot(Type.SUBCLASS_OF), 
-//					new Vertex("plant anatomical entity"), 
-//					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
-//			c.getGraph().addRelation(new Relation(
-//					new Vertex("plant anatomical entity"), 
-//					new Vertex("plant structure"), 
-//					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
-//			c.getGraph().addRelation(new Relation(
-//					new Vertex("plant structure"), 
-//					new Vertex("plant anatomical space"),
-//					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
-//			c.getGraph().addRelation(new Relation(
-//					new Vertex("plant anatomical space"),
-//					new Vertex("portion of plant substance"), 
-//					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
-//			
-//			c.getGraph().addRelation(new Relation(
-//					c.getGraph().getRoot(Type.PART_OF), 
-//					new Vertex("leaf"),
-//					new Edge(Type.PART_OF, Source.IMPORT)));
-//			c.getGraph().addRelation(new Relation(
-//					new Vertex("leaf"),
-//					new Vertex("tip"), 
-//					new Edge(Type.PART_OF, Source.IMPORT)));
-//			
-//			
-//			collectionService.insert(c, new AsyncCallback<Collection>() {
-//				@Override
-//				public void onFailure(Throwable caught) {
-//					caught.printStackTrace();
-//				}
-//				@Override
-//				public void onSuccess(final Collection c) {
-//					System.out.println("success");
-//					
-//					List<Context> contexts = new LinkedList<Context>();
-//					contexts.add(new Context(0, "some source 1", "leaf stems with wide flowers and tips"));
-//					contexts.add(new Context(1, "some source 2", "plant anatomical entity are described as either "
-//							+ "plant structure, plant anatomical space or portion of plant substance"));
-//					contexts.add(new Context(2, "some source 3", "flowers are green and yellow"));
-//					contextService.insert(0, "secret", contexts, new AsyncCallback<List<Context>>() {
-//						@Override
-//						public void onFailure(Throwable caught) {
-//							caught.printStackTrace();
-//						}
-//						@Override
-//						public void onSuccess(List<Context> result) {
-//							System.out.println("success");
-//						}
-//					});
-//					
-//					/*collectionService.add(c.getId(), c.getSecret(), new Relation(v2, v1, new Edge(Type.SUBCLASS_OF, Source.USER)), 
-//							new AsyncCallback<Boolean>() {
-//								@Override
-//								public void onFailure(Throwable caught) {
-//									
-//								}
-//								@Override
-//								public void onSuccess(Boolean result) {
-//									System.out.println(result);
-//								}
-//					}); */
-//
-//				}
-//			});
+		final Collection c = new Collection("my collection", TaxonGroup.PLANT, "secret");
+		
+		List<String> terms = Arrays.asList(new String[] { "leaf", "stem", "plant anatomical entity", "plant structure", 
+			"plant anatomical space", "portion of plant substance", "flower", "tip", "surface", "leaflet", 
+			"pedical", "apex", "polen", "area", "pedicel"
+		});
+		
+		for(String term : terms) {
+			c.add(new Candidate(term));
+		}
+		
+		try {
+			c.getGraph().addRelation(new Relation(
+					c.getGraph().getRoot(Type.SUBCLASS_OF), 
+					new Vertex("plant anatomical entity"), 
+					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
+			c.getGraph().addRelation(new Relation(
+					new Vertex("plant anatomical entity"), 
+					new Vertex("plant structure"), 
+					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
+			c.getGraph().addRelation(new Relation(
+					new Vertex("plant structure"), 
+					new Vertex("plant anatomical space"),
+					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
+			c.getGraph().addRelation(new Relation(
+					new Vertex("plant anatomical space"),
+					new Vertex("portion of plant substance"), 
+					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
+			
+			c.getGraph().addRelation(new Relation(
+					c.getGraph().getRoot(Type.PART_OF), 
+					new Vertex("leaf"),
+					new Edge(Type.PART_OF, Source.IMPORT)));
+			c.getGraph().addRelation(new Relation(
+					new Vertex("leaf"),
+					new Vertex("tip"), 
+					new Edge(Type.PART_OF, Source.IMPORT)));
+			
+			
+			collectionService.insert(c, new AsyncCallback<Collection>() {
+				@Override
+				public void onFailure(Throwable caught) {
+					caught.printStackTrace();
+				}
+				@Override
+				public void onSuccess(final Collection c) {
+					System.out.println("success");
+					
+					List<Context> contexts = new LinkedList<Context>();
+					contexts.add(new Context(0, "some source 1", "leaf stems with wide flowers and tips"));
+					contexts.add(new Context(1, "some source 2", "plant anatomical entity are described as either "
+							+ "plant structure, plant anatomical space or portion of plant substance"));
+					contexts.add(new Context(2, "some source 3", "flowers are green and yellow"));
+					contextService.insert(0, "secret", contexts, new AsyncCallback<List<Context>>() {
+						@Override
+						public void onFailure(Throwable caught) {
+							caught.printStackTrace();
+						}
+						@Override
+						public void onSuccess(List<Context> result) {
+							System.out.println("success");
+						}
+					});
+					
+					/*collectionService.add(c.getId(), c.getSecret(), new Relation(v2, v1, new Edge(Type.SUBCLASS_OF, Source.USER)), 
+							new AsyncCallback<Boolean>() {
+								@Override
+								public void onFailure(Throwable caught) {
+									
+								}
+								@Override
+								public void onSuccess(Boolean result) {
+									System.out.println(result);
+								}
+					}); */
+
+				}
+			});
 			
 			
 			
@@ -141,9 +141,9 @@ public class StandAlone implements EntryPoint {
 			};
 			timer.schedule(1000);
 
-//		} catch(Exception e) {
-//			e.printStackTrace();
-//		}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
 			
 		
 	}
