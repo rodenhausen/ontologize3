@@ -18,16 +18,14 @@ public class OntologyReasoner {
 	private StructuralReasonerFactory owlReasonerFactory;
 	private ConsoleProgressMonitor progressMonitor;
 	private SimpleConfiguration owlReasonerConfig;
-	private OWLOntologyManager owlOntologyManager;
 	private Map<OWLOntology, OWLReasoner> ontologyReasoners = new HashMap<OWLOntology, OWLReasoner>();
 	
-	public OntologyReasoner(OWLOntologyManager owlOntologyManager) {
-		this.owlOntologyManager = owlOntologyManager;
+	public OntologyReasoner(OWLOntologyManager om) {
 		owlReasonerFactory = new StructuralReasonerFactory();
 		progressMonitor = new ConsoleProgressMonitor();
 		owlReasonerConfig = new SimpleConfiguration(progressMonitor);
 		
-		for(OWLOntology owlOntology : owlOntologyManager.getOntologies()) {
+		for(OWLOntology owlOntology : om.getOntologies()) {
 			ontologyReasoners.put(owlOntology, owlReasonerFactory.createReasoner(owlOntology, owlReasonerConfig));
 		}
 	}

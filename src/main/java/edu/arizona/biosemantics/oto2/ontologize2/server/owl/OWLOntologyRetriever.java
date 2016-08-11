@@ -11,19 +11,18 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.search.EntitySearcher;
 
+import edu.arizona.biosemantics.common.biology.TaxonGroup;
 import edu.arizona.biosemantics.common.log.LogLevel;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection;
-import edu.arizona.biosemantics.oto2.oto.server.db.OntologyDAO;
-import edu.arizona.biosemantics.oto2.oto.server.db.Query.QueryException;
 
 public class OWLOntologyRetriever  {
 	
-	private OWLOntologyManager owlOntologyManager;
-	private OntologyDAO ontologyDBDAO;
+	private OWLOntologyManager om;
+	private Collection c;
 	
-	public OWLOntologyRetriever(OWLOntologyManager owlOntologyManager, OntologyDAO ontologyDBDAO) {
-		this.owlOntologyManager = owlOntologyManager;
-		this.ontologyDBDAO = ontologyDBDAO;
+	public OWLOntologyRetriever(OWLOntologyManager om, Collection c) {
+		this.om = om;
+		this.c = c;
 	}
 	
 	/**
@@ -44,27 +43,16 @@ public class OWLOntologyRetriever  {
 	 * (1) By importing the ontology that contains the class definition as a whole using an import declaration
 	 * (2) Using RDFS:defined_by
 	 * (3) Using obo:IAO_0000412 ("imported from"): may still be used in some OBO originated ontologies
-	 * */
-	public OWLOntology getOWLOntology(Collection collection, OWLClass owlClass) throws Exception {
-		java.util.Collection<Ontology> ontologies = null;
-		try {
-			ontologies = ontologyDBDAO.getAllOntologiesForCollection(collection);
-		} catch (QueryException e) {
-			throw new Exception("Could not find ontology for class " + owlClass.getIRI().toString(), e);
-		}
-		
-		return getOWLOntology(owlClass, ontologies);
-	}
-	
-	private OWLOntology getOWLOntology(OWLClass owlClass, java.util.Collection<Ontology> ontologies) throws Exception {
-		for(Ontology ontology : ontologies) {
-			IRI iri = OntologyFileDAO.createOntologyIRI(ontology);
-			OWLOntology owlOntology = owlOntologyManager.getOntology(iri);
+	 * */	
+	public OWLOntology getOWLOntology(OWLClass owlClass) throws Exception {
+		for(Ontology ontology : Ontology.getRelevantOntologies(TaxonGroup.PLANT)) {
+			IRI iri = IRI.create(ontology.getIri());
+			OWLOntology owlOntology = om.getOntology(iri);
 			if(isOWLOntologyOfClass(owlClass, owlOntology)) {
 				return owlOntology;
 			}
 			
-			java.util.Collection<OWLOntology> referencedOntologies = owlOntologyManager.getImportsClosure(owlOntology);//getReferencedOntologies(owlOntology);
+			java.util.Collection<OWLOntology> referencedOntologies = om.getImportsClosure(owlOntology);//getReferencedOntologies(owlOntology);
 			for(OWLOntology referencedOntology : referencedOntologies) {
 				if(isOWLOntologyOfClass(owlClass, referencedOntology)) {
 					return referencedOntology;
@@ -97,23 +85,12 @@ public class OWLOntologyRetriever  {
 			return true;
 		return false;
 	}
-	
-	public OWLOntology getPermanentOWLOntology(OWLClass owlClass) throws Exception {
-		java.util.Collection<Ontology> ontologies = null;
-		try {
-			ontologies = ontologyDBDAO.getBioportalOntologies();
-		} catch (QueryException e) {
-			throw new Exception("Could not find ontology for class " + owlClass.getIRI().toString(), e);
-		}
-		
-		return getOWLOntology(owlClass, ontologies);
-	}
 
 	private java.util.Collection<OWLOntology> getReferencedOntologies(OWLOntology owlOntology) {
 		java.util.Collection<OWLOntology> result = new LinkedList<OWLOntology>();
 		
 		// (1)
-		Set<OWLOntology> closureOntologies = owlOntologyManager.getImportsClosure(owlOntology);
+		Set<OWLOntology> closureOntologies = om.getImportsClosure(owlOntology);
 		result.addAll(closureOntologies);	
 		
 		Set <OWLClass> classes = owlOntology.getClassesInSignature();
@@ -121,13 +98,13 @@ public class OWLOntologyRetriever  {
 
 			// (2) rdfs:isDefinedBy
 			java.util.Collection<OWLAnnotation> annotations = EntitySearcher.getAnnotations(clazz, owlOntology, 
-					owlOntologyManager.getOWLDataFactory().getRDFSIsDefinedBy());
+					om.getOWLDataFactory().getRDFSIsDefinedBy());
 			for(OWLAnnotation annotation : annotations){
 				if(annotation.getValue() instanceof IRI){
 					IRI iri = (IRI)annotation.getValue();
 					OWLOntology definedByOwlOntology;
 					try {
-						definedByOwlOntology = owlOntologyManager.loadOntology(iri);
+						definedByOwlOntology = om.loadOntology(iri);
 						result.add(definedByOwlOntology);
 					} catch (OWLOntologyCreationException e) {
 						e.printStackTrace();
@@ -145,7 +122,7 @@ public class OWLOntologyRetriever  {
 							IRI iri = (IRI) annotation.getValue();
 							OWLOntology definedByOwlOntology;
 							try {
-								definedByOwlOntology = owlOntologyManager.loadOntology(iri);
+								definedByOwlOntology = om.loadOntology(iri);
 								result.add(definedByOwlOntology);
 							} catch (OWLOntologyCreationException e) {
 								e.printStackTrace();

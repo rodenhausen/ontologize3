@@ -1,5 +1,7 @@
 package edu.arizona.biosemantics.oto2.ontologize2.client.tree;
 
+import com.sencha.gxt.widget.core.client.TabItemConfig;
+import com.sencha.gxt.widget.core.client.TabPanel;
 import com.sencha.gxt.widget.core.client.container.SimpleContainer;
 import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
 import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer.VerticalLayoutData;
@@ -21,10 +23,18 @@ public class VisualizationView extends SimpleContainer {
 		PartsTreeView partsTree = new PartsTreeView(eventBus);
 		//TreeView synonymsTree = new TreeView(eventBus, Type.SYNONYM_OF);
 		
-		VerticalLayoutContainer vlc = new VerticalLayoutContainer();
-		vlc.add(subclassTree, new VerticalLayoutData(1, 0.5));
-		vlc.add(partsTree, new VerticalLayoutData(1, 0.5));
+		//VerticalLayoutContainer vlc = new VerticalLayoutContainer();
+		//vlc.add(subclassTree, new VerticalLayoutData(1, 0.5));
+		//vlc.add(partsTree, new VerticalLayoutData(1, 0.5));
 		//vlc.add(synonymsTree, new VerticalLayoutData(1, 0.33));
-		this.setWidget(vlc);
+		//this.setWidget(vlc);
+		
+		TabPanel tabPanel = new TabPanel();
+		tabPanel.setTabScroll(true);
+		tabPanel.setAnimScroll(true);
+		tabPanel.add(subclassTree, new TabItemConfig("Categories", false));
+		tabPanel.add(partsTree, new TabItemConfig("Parts", false));
+		//tabPanel.add(synonymGrid, new TabItemConfig("Synonyms", false));
+		this.add(tabPanel);
 	}
 }

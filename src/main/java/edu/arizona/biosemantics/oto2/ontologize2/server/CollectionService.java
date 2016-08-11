@@ -3,8 +3,12 @@ package edu.arizona.biosemantics.oto2.ontologize2.server;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -124,9 +128,22 @@ public class CollectionService extends RemoteServiceServlet implements ICollecti
 	}
 
 	@Override
-	public String getOWL(int collectionId, String secret) throws Exception {
+	public String[][] getOWL(int collectionId, String secret) throws Exception {
 		Collection c = this.get(collectionId, secret);
 		OWLWriter ow = new OWLWriter(c);
-		return ow.write();
+		ow.write();
+		
+		File[] children = new File(Configuration.collectionOntologyDirectory + File.separator + c.getId()).listFiles();
+		String[][] result = new String[children.length][2];
+		for(int i=0; i<children.length; i++) {
+			result[i][0] = getFileContent(children[i]);
+			result[i][1] = children[i].getName();
+		}	
+		return result;
+	}
+
+	private String getFileContent(File file) throws IOException {
+		 byte[] encoded = Files.readAllBytes(Paths.get(file.getAbsolutePath()));
+		  return new String(encoded, "UTF8");
 	}
 }

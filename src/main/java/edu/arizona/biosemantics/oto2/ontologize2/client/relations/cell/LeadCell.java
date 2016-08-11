@@ -125,8 +125,11 @@ public class LeadCell extends MenuExtendedCell<Vertex> {
 		List<Vertex> targets = new LinkedList<Vertex>();
 		for(Relation r : g.getOutRelations(relation.getDestination(), termsGrid.getType())) 
 			targets.add(r.getDestination());
-		final MessageBox box = Alerter.showYesNoCancelConfirm("Remove relation", "You are about to remove the relation " + relation.toString() + ".\n" +
-				"Do you want to remove all children of " + relation.getDestination() + " or attach them instead to " + relation.getSource());
+		final MessageBox box = Alerter.showYesNoCancelConfirm("Remove " + termsGrid.getType().getTargetLabel(), 
+				"You are about to remove " + termsGrid.getType().getTargetLabel() + "<i>" + relation.getDestination() + "</i>"
+				+ " from <i>" + relation.getSource() + "</i>.\n" +
+				"Do you want to remove all " + termsGrid.getType().getTargetLabelPlural() + " of <i>" + relation.getDestination() + "</i>" +
+				" or make them instead a " + termsGrid.getType().getTargetLabel() + " of <i>" + relation.getSource() + "</i>?");
 		box.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler() {
 			@Override
 			public void onSelect(SelectEvent event) {

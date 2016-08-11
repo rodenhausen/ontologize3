@@ -16,6 +16,7 @@ public class Configuration {
 
 	/** **/
 	public static String collectionsDirectory;
+	public static String ontologyGraphs;
 	
 	/** Ontologies **/
 	public static String etcOntologyBaseIRI;
@@ -42,6 +43,7 @@ public class Configuration {
 			properties.load(loader.getResourceAsStream("edu/arizona/biosemantics/oto2/ontologize2/config.properties"));
 			
 			collectionsDirectory = properties.getProperty("collectionsDirectory");
+			ontologyGraphs = properties.getProperty("ontologyGraphs");
 			context = properties.getProperty("context");
 			contextMaxHits = Integer.valueOf(properties.getProperty("contextMaxHits"));
 			

@@ -51,8 +51,6 @@ public class AxiomManager  {
 	public AxiomManager(OWLOntologyManager om) {
 		this.om = om;
 		
-		entityClass = om.getOWLDataFactory().getOWLClass(IRI.create(Type.ENTITY.getIRI())); //material anatomical entity
-		qualityClass = om.getOWLDataFactory().getOWLClass(IRI.create(Type.QUALITY.getIRI())); //quality
 		partOfProperty = om.getOWLDataFactory().getOWLObjectProperty(IRI.create(AnnotationProperty.PART_OF.getIRI()));
 		labelProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.LABEL.getIRI()));
 		synonymProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.SYNONYM.getIRI()));
@@ -95,14 +93,12 @@ public class AxiomManager  {
 		om.addAxiom(owlOntology, definitionAxiom);
 	}
 		
-	public void addSourceSampleComment(OWLOntology owlOntology, IRITerm it, OWLClass owlClass) {
-		if(it.hasSource() || it.hasSampleSentence()){
-			OWLAnnotation commentAnnotation = om.getOWLDataFactory().getOWLAnnotation(om.getOWLDataFactory().getRDFSComment(), 
-					om.getOWLDataFactory().getOWLLiteral("source: " + it.sampleSentence + "[taken from: " + 
-							it.source + "]", "en"));
-			OWLAxiom commentAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), commentAnnotation);
-			om.addAxiom(owlOntology, commentAxiom);
-		}
+	public void addSourceSampleComment(OWLOntology owlOntology, String source, String sample, OWLClass owlClass) {
+		OWLAnnotation commentAnnotation = om.getOWLDataFactory().getOWLAnnotation(om.getOWLDataFactory().getRDFSComment(), 
+				om.getOWLDataFactory().getOWLLiteral("source: " + sample + "[taken from: " + 
+						source + "]", "en"));
+		OWLAxiom commentAxiom = om.getOWLDataFactory().getOWLAnnotationAssertionAxiom(owlClass.getIRI(), commentAnnotation);
+		om.addAxiom(owlOntology, commentAxiom);
 	}
 	
 	public void addLabel(OWLOntology owlOntology, OWLClass owlClass, OWLLiteral classLabelLiteral) {

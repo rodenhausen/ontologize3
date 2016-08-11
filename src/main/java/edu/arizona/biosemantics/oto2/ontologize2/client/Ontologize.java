@@ -13,6 +13,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.IsWidget;
 import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.Widget;
 import com.sencha.gxt.core.client.util.Margins;
 import com.sencha.gxt.widget.core.client.ContentPanel;
@@ -33,6 +34,7 @@ import com.sencha.gxt.widget.core.client.menu.MenuItem;
 
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.RelationsView;
 import edu.arizona.biosemantics.oto2.ontologize2.client.candidate.CandidateView;
+import edu.arizona.biosemantics.oto2.ontologize2.client.common.TabPanelMessageBox;
 import edu.arizona.biosemantics.oto2.ontologize2.client.common.TextAreaMessageBox;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.info.ContextView;
@@ -56,16 +58,20 @@ public class Ontologize extends SimpleContainer {
 				@Override
 				public void onSelection(SelectionEvent<Item> event) {
 					collectionService.getOWL(ModelController.getCollection().getId(), 
-							ModelController.getCollection().getSecret(), new AsyncCallback<String>() {
+							ModelController.getCollection().getSecret(), new AsyncCallback<String[][]>() {
 							@Override
 							public void onFailure(Throwable caught) {
 								Alerter.showAlert("Generate OWL", "Failed to generate OWL", caught);
 							}
 							@Override
-							public void onSuccess(String result) {
-								final TextAreaMessageBox box = new TextAreaMessageBox("OWL", "");
+							public void onSuccess(String[][] result) {
+								final TabPanelMessageBox box = new TabPanelMessageBox("OWL", "");
 								box.setModal(true);
-								box.getTextArea().setText(result);
+								for(int i=0; i<result.length; i++) {
+									TextArea textArea = new TextArea();
+									textArea.setText(result[i][0]);
+									box.addTab(result[i][1], textArea);
+								}
 								box.show();
 							}
 					});

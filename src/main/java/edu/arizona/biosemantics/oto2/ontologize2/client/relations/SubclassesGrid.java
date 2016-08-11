@@ -50,8 +50,8 @@ public class SubclassesGrid extends MenuTermsGrid {
 						final MessageBox box = Alerter.showConfirm("Create Subclass", 
 								"<i>" + dest + "</i> is already a subclass of " + existingRelations.size() + " superclasses: <i>" +
 										Alerter.collapseTermsAsString(existSources) + "</i>.</br></br></br>" +
-										"Do you still want to add <i>" + dest + "</i> as subclass of <i>" + source + "</i>?</br></br>" +
-										"If NO, please create a new term then add as a subclass of <i>" + source + "</i>.");
+										"Do you still want to make <i>" + dest + "</i> a subclass of <i>" + source + "</i>?</br></br>" +
+										"If NO, please create a new term then make it a subclass of <i>" + source + "</i>.");
 						box.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler() {
 							@Override
 							public void onSelect(SelectEvent event) {

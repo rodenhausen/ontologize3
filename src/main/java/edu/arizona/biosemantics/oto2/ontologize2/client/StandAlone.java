@@ -48,7 +48,7 @@ public class StandAlone implements EntryPoint {
 		}
 		
 		try {
-			c.getGraph().addRelation(new Relation(
+			/*c.getGraph().addRelation(new Relation(
 					c.getGraph().getRoot(Type.SUBCLASS_OF), 
 					new Vertex("plant anatomical entity"), 
 					new Edge(Type.SUBCLASS_OF, Source.IMPORT)));
@@ -72,7 +72,7 @@ public class StandAlone implements EntryPoint {
 			c.getGraph().addRelation(new Relation(
 					new Vertex("leaf"),
 					new Vertex("tip"), 
-					new Edge(Type.PART_OF, Source.IMPORT)));
+					new Edge(Type.PART_OF, Source.IMPORT)));*/
 			
 			
 			collectionService.insert(c, new AsyncCallback<Collection>() {
