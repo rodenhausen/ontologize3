@@ -78,7 +78,7 @@ public class OntologyGraph implements Serializable {
 	public static class Edge implements Serializable {
 
 		public static enum Type {
-			SUBCLASS_OF("category", "superclass", "subclass", "subclasses", "category hierarchy", "Class-Thing"), 
+			SUBCLASS_OF("category", "superclass", "subclass", "subclasses", "category hierarchy", "Thing"), 
 					PART_OF("part", "parent", "part", "parts", "part-of hierarchy", "Whole Organism"), 
 					SYNONYM_OF("synonym", "preferred term", "synonym", "synonyms", "synonym-hierarchy", "Synonym-Root");
 

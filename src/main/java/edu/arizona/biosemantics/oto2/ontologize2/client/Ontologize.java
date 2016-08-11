@@ -17,6 +17,8 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.Widget;
 import com.sencha.gxt.core.client.util.Margins;
 import com.sencha.gxt.widget.core.client.ContentPanel;
+import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
+import com.sencha.gxt.widget.core.client.box.MessageBox;
 import com.sencha.gxt.widget.core.client.box.MultiLinePromptMessageBox;
 import com.sencha.gxt.widget.core.client.button.TextButton;
 import com.sencha.gxt.widget.core.client.container.BorderLayoutContainer;
@@ -57,16 +59,20 @@ public class Ontologize extends SimpleContainer {
 			generateItem.addSelectionHandler(new SelectionHandler<Item>() {
 				@Override
 				public void onSelection(SelectionEvent<Item> event) {
+					final MessageBox box = Alerter.startLoading();
 					collectionService.getOWL(ModelController.getCollection().getId(), 
 							ModelController.getCollection().getSecret(), new AsyncCallback<String[][]>() {
 							@Override
 							public void onFailure(Throwable caught) {
+								Alerter.stopLoading(box);
 								Alerter.showAlert("Generate OWL", "Failed to generate OWL", caught);
 							}
 							@Override
 							public void onSuccess(String[][] result) {
+								Alerter.stopLoading(box);
 								final TabPanelMessageBox box = new TabPanelMessageBox("OWL", "");
 								box.setModal(true);
+								box.setHideOnButtonClick(true);
 								for(int i=0; i<result.length; i++) {
 									TextArea textArea = new TextArea();
 									textArea.setText(result[i][0]);

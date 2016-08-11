@@ -1,11 +1,9 @@
 package edu.arizona.biosemantics.oto2.ontologize2.server.owl;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,7 +18,6 @@ import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLImportsDeclaration;
 import org.semanticweb.owlapi.model.OWLLiteral;
 import org.semanticweb.owlapi.model.OWLOntology;
-import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.reasoner.ConsoleProgressMonitor;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
@@ -32,7 +29,6 @@ import org.semanticweb.owlapi.vocab.OWLRDFVocabulary;
 
 import uk.ac.manchester.cs.owlapi.modularity.ModuleType;
 import uk.ac.manchester.cs.owlapi.modularity.SyntacticLocalityModuleExtractor;
-import edu.arizona.biosemantics.common.biology.TaxonGroup;
 import edu.arizona.biosemantics.common.ontology.graph.Reader;
 import edu.arizona.biosemantics.oto2.ontologize2.server.Configuration;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection;
@@ -40,7 +36,6 @@ import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Type;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
-import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 
 public class OWLWriter {
 	
@@ -89,9 +84,15 @@ public class OWLWriter {
 			for(Ontology ro : Ontology.getRelevantOntologies(c.getTaxonGroup())) {
 				edu.arizona.biosemantics.common.ontology.graph.OntologyGraph rg = graphs.get(ro);
 				Set<edu.arizona.biosemantics.common.ontology.graph.OntologyGraph.Vertex> oMatches = rg.getVerticesByName(v.getValue());
-				if(!oMatches.isEmpty()) {
-					matches.put(ro, oMatches);
-					matchCount += oMatches.size();
+				Set<edu.arizona.biosemantics.common.ontology.graph.OntologyGraph.Vertex> oMatchesWithIri = 
+						new HashSet<edu.arizona.biosemantics.common.ontology.graph.OntologyGraph.Vertex>();
+				for(edu.arizona.biosemantics.common.ontology.graph.OntologyGraph.Vertex match : oMatches) {
+					if(match.hasIri())
+						oMatchesWithIri.add(match);
+				}
+				if(!oMatchesWithIri.isEmpty()) {
+					matches.put(ro, oMatchesWithIri);
+					matchCount += oMatchesWithIri.size();
 				}
 			}
 			if(matchCount == 1) {
@@ -106,8 +107,10 @@ public class OWLWriter {
 		}
 		
 		for(Vertex v : g.getVertices()) {
+			System.out.println("Processing " + v.getValue());
 			OWLClass oc = om.getOWLDataFactory().getOWLClass(IRI.create(iriMap.get(v)));
 			if(!iriMap.get(v).startsWith(Configuration.etcOntologyBaseIRI)) {
+				System.out.println("Create module");
 				createModule(oc);
 			}
 			axm.addDeclaration(o, oc);

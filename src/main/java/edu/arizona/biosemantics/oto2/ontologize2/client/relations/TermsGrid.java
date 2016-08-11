@@ -22,6 +22,7 @@ import com.google.gwt.event.shared.GwtEvent;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.client.ui.IsWidget;
 import com.google.gwt.user.client.ui.Widget;
+import com.sencha.gxt.core.client.Style.HideMode;
 import com.sencha.gxt.core.client.ValueProvider;
 import com.sencha.gxt.core.client.dom.ScrollSupport.ScrollMode;
 import com.sencha.gxt.data.shared.ListStore;
@@ -47,6 +48,7 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEven
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveCandidateEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.cell.AttachedCell;
+import edu.arizona.biosemantics.oto2.ontologize2.client.relations.cell.DefaultMenuCreator;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.cell.LeadCell;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.node.VertexTreeNode;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.ICollectionService;
@@ -207,13 +209,15 @@ public class TermsGrid implements IsWidget {
 	protected SimpleContainer createRowContainer;
 	private final int colWidth = 100;
 	protected Type type;
+	private VerticalLayoutContainer vlc;
+	private SimpleContainer simpleContainer;
 	
 	public TermsGrid(final EventBus eventBus, final Type type) {
 		this.eventBus = eventBus;
 		this.type = type;
 		store = new ListStore<Row>(rowProperties.key());
 		store.setAutoCommit(true);
-		this.grid = new Grid<Row>(store, createColumnModel(new LinkedList<Row>()));
+		this.grid = new Grid<Row>(store, createColumnModel(new LinkedList<Row>()));// createColumnModel(1));//createColumnModel(new LinkedList<Row>()));
 		
 		createRowContainer = createCreateRowContainer();
 
@@ -268,6 +272,13 @@ public class TermsGrid implements IsWidget {
 			});
 			dropTargetNewRow.setOperation(Operation.COPY);
 		}
+		vlc = new VerticalLayoutContainer();
+		vlc.add(grid);
+		if(createRowContainer != null)
+			vlc.add(createRowContainer);
+		vlc.getScrollSupport().setScrollMode(ScrollMode.AUTO);
+		simpleContainer = new SimpleContainer();
+		simpleContainer.add(vlc);
 		
 		bindEvents();
 	}
@@ -346,6 +357,8 @@ public class TermsGrid implements IsWidget {
 		addRow(rootRow);
 		
 		createEdges(g, g.getRoot(type), new HashSet<String>());
+		//grid.reconfigure(store, createColumnModel(this.getAll()));
+		//grid.getView().refresh(true);
 	}
 	
 	protected void createEdges(OntologyGraph g, Vertex source, Set<String> createdRelations) {
@@ -401,14 +414,6 @@ public class TermsGrid implements IsWidget {
 			vertexRowMap.put(v, new HashSet<Row>());
 		vertexRowMap.get(v).add(r);
 	}*/
-
-	protected void setRows(List<Row> rows) {
-		clearGrid();
-		for(Row row : rows) {
-			this.addRow(row);
-		}
-		grid.reconfigure(store, createColumnModel(rows));
-	}
 	
 	protected void removeRow(Row row, boolean recursive) {
 		if(recursive) {
@@ -532,7 +537,7 @@ public class TermsGrid implements IsWidget {
 	}
 	
 	protected LeadCell createLeadCell() {
-		LeadCell leadCell = new LeadCell(eventBus, this, new ValueProvider<Vertex, String>() {
+		LeadCell leadCell = new LeadCell(new ValueProvider<Vertex, String>() {
 			@Override
 			public String getValue(Vertex object) {
 				return object.getValue();
@@ -543,7 +548,7 @@ public class TermsGrid implements IsWidget {
 			public String getPath() {
 				return "lead";
 			}
-		});
+		}, new DefaultMenuCreator(eventBus, this));
 		return leadCell;
 	}
 
@@ -614,14 +619,6 @@ public class TermsGrid implements IsWidget {
 
 	@Override
 	public Widget asWidget() {
-		VerticalLayoutContainer vlc = new VerticalLayoutContainer();
-		vlc.add(grid);
-		if(createRowContainer != null)
-			vlc.add(createRowContainer);
-		vlc.getScrollSupport().setScrollMode(ScrollMode.AUTO);
-		
-		SimpleContainer simpleContainer = new SimpleContainer();
-		simpleContainer.add(vlc);
 		return simpleContainer;
 	}
 
@@ -629,4 +626,7 @@ public class TermsGrid implements IsWidget {
 		return type;
 	}
 
+	public void refreshHeader() {
+        grid.getView().refresh(true);
+	}
 }

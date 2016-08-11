@@ -52,112 +52,23 @@ public class LeadCell extends MenuExtendedCell<Vertex> {
 				String aStyleClass, String value, String quickTipText, String colorHex, String backgroundImage);
 	}
 	
-	private TermsGrid termsGrid;
+	interface MenuCreator {
+		Menu create(int rowIndex);
+	}
+	
 	private ValueProvider<Vertex, String> valueProvider;
-	private EventBus eventBus;
+	private MenuCreator menuCreator;
 	protected static Templates templates = GWT.create(Templates.class);
 	
-	public LeadCell(EventBus eventBus, TermsGrid termsGrid, ValueProvider<Vertex, String> valueProvider) {
-		this.eventBus = eventBus;
-		this.termsGrid = termsGrid;
+	public LeadCell(ValueProvider<Vertex, String> valueProvider, MenuCreator menuCreator) {
 		this.valueProvider = valueProvider;
+		this.menuCreator = menuCreator;
 	}
 	
 	@Override
 	protected Menu createContextMenu(int column, int rowIndex) {
-		Menu menu = new Menu();
-		final OntologyGraph g = ModelController.getCollection().getGraph();
-		final Row row = termsGrid.getRow(rowIndex);
-		
-		MenuItem addItem = new MenuItem("Add " + termsGrid.getType().getTargetLabel());
-		addItem.addSelectionHandler(new SelectionHandler<Item>() {
-			@Override
-			public void onSelection(SelectionEvent<Item> event) {
-				OntologyGraph g = ModelController.getCollection().getGraph();
-				
-				final PromptMessageBox box = Alerter.showPromptMessageBox("Add " + termsGrid.getType().getTargetLabel(), 
-						"Add " + termsGrid.getType().getTargetLabel());
-				box.getButton(PredefinedButton.OK).addSelectHandler(new SelectHandler() {
-					@Override
-					public void onSelect(SelectEvent event) {
-						termsGrid.fire(new CreateRelationEvent(
-								new Relation(row.getLead(), new Vertex(box.getTextField().getText()), new Edge(termsGrid.getType(), Source.USER))));
-					}
-				});
-			}
-		});
-		
-		MenuItem removeItem = new MenuItem("Remove all " + termsGrid.getType().getTargetLabelPlural());
-		removeItem.addSelectionHandler(new SelectionHandler<Item>() {
-			@Override
-			public void onSelection(SelectionEvent<Item> event) {
-				OntologyGraph g = ModelController.getCollection().getGraph();
-				Vertex targetVertex = row.getLead();
-				for(final Relation r : g.getOutRelations(targetVertex, termsGrid.getType())) {
-					if(g.getInRelations(r.getDestination(), termsGrid.getType()).size() <= 1) {
-						if(g.getOutRelations(r.getDestination(), termsGrid.getType()).isEmpty()) {
-							eventBus.fireEvent(new RemoveRelationEvent(false, r));
-						} else {
-							doAskForRecursiveRemoval(r);
-						}
-					} else {
-						eventBus.fireEvent(new RemoveRelationEvent(false, r));
-					}
-				} 
-			}
-		});
-		MenuItem context = new MenuItem("Show Term Context");
-		context.addSelectionHandler(new SelectionHandler<Item>() {
-			@Override
-			public void onSelection(SelectionEvent<Item> event) {
-				eventBus.fireEvent(new SelectTermEvent(row.getLead().getValue()));
-			}
-		});
-		menu.add(addItem);
-		menu.add(removeItem);
-		menu.add(context);
-		
-		return menu;
-	}
-
-	protected void doAskForRecursiveRemoval(final Relation relation) {
-		OntologyGraph g = ModelController.getCollection().getGraph();
-		List<Vertex> targets = new LinkedList<Vertex>();
-		for(Relation r : g.getOutRelations(relation.getDestination(), termsGrid.getType())) 
-			targets.add(r.getDestination());
-		final MessageBox box = Alerter.showYesNoCancelConfirm("Remove " + termsGrid.getType().getTargetLabel(), 
-				"You are about to remove " + termsGrid.getType().getTargetLabel() + "<i>" + relation.getDestination() + "</i>"
-				+ " from <i>" + relation.getSource() + "</i>.\n" +
-				"Do you want to remove all " + termsGrid.getType().getTargetLabelPlural() + " of <i>" + relation.getDestination() + "</i>" +
-				" or make them instead a " + termsGrid.getType().getTargetLabel() + " of <i>" + relation.getSource() + "</i>?");
-		box.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler() {
-			@Override
-			public void onSelect(SelectEvent event) {
-				eventBus.fireEvent(new RemoveRelationEvent(true, relation));
-				/*for(GwtEvent<Handler> e : createRemoveEvents(true, relation)) {
-					eventBus.fireEvent(e);
-				}*/
-				box.hide();
-			}
-		});
-		box.getButton(PredefinedButton.NO).addSelectHandler(new SelectHandler() {
-			@Override
-			public void onSelect(SelectEvent event) {
-				eventBus.fireEvent(new RemoveRelationEvent(false, relation));
-				/*for(GwtEvent<Handler> e : createRemoveEvents(false, relation)) {
-					eventBus.fireEvent(e);
-				}*/
-				box.hide();
-			}
-		});
-		box.getButton(PredefinedButton.CANCEL).addSelectHandler(new SelectHandler() {
-			@Override
-			public void onSelect(SelectEvent event) {
-				box.hide();
-			}
-		});
-	}
-	
+		return menuCreator.create(rowIndex);
+	}	
 	
 	@Override
 	public void render(Context context, Vertex value, SafeHtmlBuilder sb) {

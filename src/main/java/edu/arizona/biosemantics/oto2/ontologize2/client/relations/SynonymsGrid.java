@@ -8,6 +8,7 @@ import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.event.shared.GwtEvent;
+import com.sencha.gxt.core.client.ValueProvider;
 import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
 import com.sencha.gxt.widget.core.client.box.MessageBox;
 import com.sencha.gxt.widget.core.client.box.PromptMessageBox;
@@ -22,6 +23,9 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.common.TextAreaMessageBo
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
+import edu.arizona.biosemantics.oto2.ontologize2.client.relations.cell.DefaultMenuCreator;
+import edu.arizona.biosemantics.oto2.ontologize2.client.relations.cell.LeadCell;
+import edu.arizona.biosemantics.oto2.ontologize2.client.relations.cell.SynonymMenuCreator;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Candidate;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
@@ -127,5 +131,32 @@ public class SynonymsGrid extends MenuTermsGrid {
 	@Override
 	protected String getDefaultImportText() {
 		return "preferred term, synonym 1, synonym 2, ...[e.g. apex, tip, appex]"; 
+	}
+	
+	@Override
+	protected LeadCell createLeadCell() {
+		LeadCell leadCell = new LeadCell(new ValueProvider<Vertex, String>() {
+			@Override
+			public String getValue(Vertex object) {
+				return object.getValue();
+			}
+			@Override
+			public void setValue(Vertex object, String value) { }
+			@Override
+			public String getPath() {
+				return "lead";
+			}
+		}, new SynonymMenuCreator(eventBus, this));
+		return leadCell;
+	}
+	
+	@Override
+	protected void removeRelation(Relation r, boolean recursive) {
+		OntologyGraph graph = ModelController.getCollection().getGraph();
+		if(r.getSource().equals(graph.getRoot(type))) {
+			Row row = leadRowMap.get(r.getDestination());
+			this.removeRow(row, true);
+		} else
+			super.removeRelation(r, recursive);
 	}
 }

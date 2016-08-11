@@ -14,6 +14,7 @@ import java.util.List;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
+import edu.arizona.biosemantics.common.log.LogLevel;
 import edu.arizona.biosemantics.oto2.ontologize2.server.owl.OWLWriter;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.AddCandidateResult;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.ICollectionService;
@@ -129,17 +130,23 @@ public class CollectionService extends RemoteServiceServlet implements ICollecti
 
 	@Override
 	public String[][] getOWL(int collectionId, String secret) throws Exception {
-		Collection c = this.get(collectionId, secret);
-		OWLWriter ow = new OWLWriter(c);
-		ow.write();
-		
-		File[] children = new File(Configuration.collectionOntologyDirectory + File.separator + c.getId()).listFiles();
-		String[][] result = new String[children.length][2];
-		for(int i=0; i<children.length; i++) {
-			result[i][0] = getFileContent(children[i]);
-			result[i][1] = children[i].getName();
-		}	
-		return result;
+		try {
+			Collection c = this.get(collectionId, secret);
+			OWLWriter ow = new OWLWriter(c);
+			ow.write();
+			
+			File[] children = new File(Configuration.collectionOntologyDirectory + File.separator + c.getId()).listFiles();
+			String[][] result = new String[children.length][2];
+			for(int i=0; i<children.length; i++) {
+				result[i][0] = getFileContent(children[i]);
+				result[i][1] = children[i].getName();
+			}	
+			return result;
+		} catch(Exception e) {
+			log(LogLevel.ERROR, "Could not create OWL", e);
+			e.printStackTrace();
+			throw e;
+		}
 	}
 
 	private String getFileContent(File file) throws IOException {

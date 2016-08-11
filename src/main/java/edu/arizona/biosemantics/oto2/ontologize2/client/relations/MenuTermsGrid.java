@@ -9,6 +9,7 @@ import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.ui.Widget;
+import com.sencha.gxt.core.client.Style.HideMode;
 import com.sencha.gxt.core.client.util.DelayedTask;
 import com.sencha.gxt.data.shared.Store;
 import com.sencha.gxt.data.shared.Store.StoreFilter;
@@ -57,6 +58,8 @@ public class MenuTermsGrid extends TermsGrid {
 				setFilter(!filterField.getText().isEmpty());
 		}
 	};
+	private VerticalLayoutContainer vlc;
+	private SimpleContainer simpleContainer;
 	
 	public MenuTermsGrid(final EventBus eventBus, final Type type) {
 		super(eventBus, type);
@@ -212,6 +215,13 @@ public class MenuTermsGrid extends TermsGrid {
 		buttonBar.add(exportButton);
 		//buttonBar.add(consolidateButton);
 		//buttonBar.add(removeButton);
+		
+		vlc = new VerticalLayoutContainer();
+		vlc.add(buttonBar, new VerticalLayoutData(1, -1));
+		vlc.add(super.asWidget(), new VerticalLayoutData(1, 1));
+		simpleContainer = new SimpleContainer();
+		simpleContainer.setWidget(vlc);
+		simpleContainer.setHideMode(HideMode.OFFSETS); //bug https://www.sencha.com/forum/showthread.php?285982-Grid-ColumnHeader-Menu-missing
 	}
 	
 	protected String getDefaultImportText() {
@@ -270,11 +280,6 @@ public class MenuTermsGrid extends TermsGrid {
 
 	@Override
 	public Widget asWidget() {
-		VerticalLayoutContainer vlc = new VerticalLayoutContainer();
-		vlc.add(buttonBar, new VerticalLayoutData(1, -1));
-		vlc.add(super.asWidget(), new VerticalLayoutData(1, 1));
-		SimpleContainer simpleContainer = new SimpleContainer();
-		simpleContainer.setWidget(vlc);
 		return simpleContainer;
 	}
 

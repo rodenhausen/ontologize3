@@ -34,8 +34,8 @@ public class AxiomManager  {
 
 	private OWLOntologyManager om;
 	
-	private OWLClass entityClass;
-	private OWLClass qualityClass;
+	//private OWLClass entityClass;
+	//private OWLClass qualityClass;
 	private OWLObjectProperty partOfProperty;
 	private OWLAnnotationProperty labelProperty;
 	private OWLAnnotationProperty synonymProperty;
@@ -51,6 +51,8 @@ public class AxiomManager  {
 	public AxiomManager(OWLOntologyManager om) {
 		this.om = om;
 		
+		//entityClass = om.getOWLDataFactory().getOWLClass(IRI.create(Type.ENTITY.getIRI())); //material anatomical entity
+		//qualityClass = om.getOWLDataFactory().getOWLClass(IRI.create(Type.QUALITY.getIRI())); //quality
 		partOfProperty = om.getOWLDataFactory().getOWLObjectProperty(IRI.create(AnnotationProperty.PART_OF.getIRI()));
 		labelProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.LABEL.getIRI()));
 		synonymProperty = om.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(AnnotationProperty.SYNONYM.getIRI()));
@@ -119,15 +121,15 @@ public class AxiomManager  {
 		om.addAxiom(owlOntology, createdByAxiom);
 	}
 	
-	public void addQualitySubclass(OWLOntology owlOntology, OWLClass owlClass) {
-		OWLAxiom subclassAxiom = om.getOWLDataFactory().getOWLSubClassOfAxiom(owlClass, qualityClass);
-		om.addAxiom(owlOntology, subclassAxiom);
-	}
-	
-	public void addEntitySubclass(OWLOntology owlOntology, OWLClass owlClass) {
-		OWLAxiom subclassAxiom = om.getOWLDataFactory().getOWLSubClassOfAxiom(owlClass, entityClass);
-		om.addAxiom(owlOntology, subclassAxiom);
-	}
+//	public void addQualitySubclass(OWLOntology owlOntology, OWLClass owlClass) {
+//		OWLAxiom subclassAxiom = om.getOWLDataFactory().getOWLSubClassOfAxiom(owlClass, qualityClass);
+//		om.addAxiom(owlOntology, subclassAxiom);
+//	}
+//	
+//	public void addEntitySubclass(OWLOntology owlOntology, OWLClass owlClass) {
+//		OWLAxiom subclassAxiom = om.getOWLDataFactory().getOWLSubClassOfAxiom(owlClass, entityClass);
+//		om.addAxiom(owlOntology, subclassAxiom);
+//	}
 
 	public void addDefaultAxioms(OWLOntology owlOntology) {
 		//add annotation properties
@@ -224,8 +226,8 @@ public class AxiomManager  {
 		*/
 		
 		//disjoint entity and quality classes
-		OWLAxiom disjointClassesAxiom = om.getOWLDataFactory().getOWLDisjointClassesAxiom(entityClass, qualityClass);
-		om.addAxiom(owlOntology, disjointClassesAxiom);
+		//OWLAxiom disjointClassesAxiom = om.getOWLDataFactory().getOWLDisjointClassesAxiom(entityClass, qualityClass);
+		//om.addAxiom(owlOntology, disjointClassesAxiom);
 	}
 
 

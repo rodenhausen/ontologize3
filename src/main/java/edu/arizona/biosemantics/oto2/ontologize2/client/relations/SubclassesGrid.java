@@ -146,4 +146,5 @@ public class SubclassesGrid extends MenuTermsGrid {
 	protected String getDefaultImportText() {
 		return "superclass, subclass 1, subclass 2, ...[e.g. fruits, simple fruits, aggregate fruits, composite fruits]"; 
 	}
+
 }

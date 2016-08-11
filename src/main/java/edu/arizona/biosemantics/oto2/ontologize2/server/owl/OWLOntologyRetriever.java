@@ -45,6 +45,7 @@ public class OWLOntologyRetriever  {
 	 * (3) Using obo:IAO_0000412 ("imported from"): may still be used in some OBO originated ontologies
 	 * */	
 	public OWLOntology getOWLOntology(OWLClass owlClass) throws Exception {
+		System.out.println("find ontology for " + owlClass.getIRI());
 		for(Ontology ontology : Ontology.getRelevantOntologies(TaxonGroup.PLANT)) {
 			IRI iri = IRI.create(ontology.getIri());
 			OWLOntology owlOntology = om.getOntology(iri);
