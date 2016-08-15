@@ -8,8 +8,8 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Candidate;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 
 @RemoteServiceRelativePath("ontologize2_collection")
 public interface ICollectionService extends RemoteService {
@@ -20,9 +20,11 @@ public interface ICollectionService extends RemoteService {
 	
 	public void update(Collection collection) throws Exception;
 	
-	public boolean add(int collectionId, String secret, Relation relation) throws Exception;
+	public boolean add(int collectionId, String secret, Edge relation) throws Exception;
 	
-	public void remove(int collectionId, String secret, Relation relation) throws Exception;
+	public void remove(int collectionId, String secret, Edge relation, boolean recursive) throws Exception;
+	
+	public void replace(int collectionId, String secret, Edge oldRelation, Vertex newSource) throws Exception;
 		
 	public AddCandidateResult add(int id, String secret, List<Candidate> candidates) throws Exception;
 	

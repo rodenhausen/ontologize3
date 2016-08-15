@@ -7,28 +7,32 @@ import java.util.List;
 import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.event.shared.GwtEvent;
 
-import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEvent.Handler;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.ReplaceRelationEvent.Handler;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
 
-public class CreateRelationEvent extends GwtEvent<Handler> implements Serializable {
+/**
+ * Only edge is removed and destination is reattached to another node
+ * @author rodenhausen
+ *
+ */
+public class ReplaceRelationEvent extends GwtEvent<Handler> implements Serializable {
 
 	public interface Handler extends EventHandler {
-		void onCreate(CreateRelationEvent event);
+		void onReplace(ReplaceRelationEvent event);
 	}
 	
     public static Type<Handler> TYPE = new Type<Handler>();
-	private Edge[] relations = new Edge[] { };
 	private boolean isEffectiveInModel = false;
+	private Edge oldRelation;
+	private Vertex newSource;
 	
-	private CreateRelationEvent() { }
+	private ReplaceRelationEvent() { }
 	
-    public CreateRelationEvent(Edge... relations) { 
-    	this.relations = relations;
+    public ReplaceRelationEvent(Edge oldRelation, Vertex newSource) { 
+    	this.oldRelation = oldRelation;
+    	this.newSource = newSource;
     }
-    
-	public CreateRelationEvent(List<Edge> relations) {
-		this.relations = relations.toArray(this.relations);
-	}
 
 	@Override
 	public Type<Handler> getAssociatedType() {
@@ -37,11 +41,15 @@ public class CreateRelationEvent extends GwtEvent<Handler> implements Serializab
 
 	@Override
 	protected void dispatch(Handler handler) {
-		handler.onCreate(this);
+		handler.onReplace(this);
 	}
 
-	public Edge[] getRelations() {
-		return relations;
+	public Edge getOldRelation() {
+		return oldRelation;
+	}
+
+	public Vertex getNewSource() {
+		return newSource;
 	}
 
 	public boolean isEffectiveInModel() {

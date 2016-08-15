@@ -22,10 +22,9 @@ import edu.arizona.biosemantics.oto2.ontologize2.shared.IContextServiceAsync;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Candidate;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Type;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Source;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Origin;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 
 public class StandAlone implements EntryPoint {

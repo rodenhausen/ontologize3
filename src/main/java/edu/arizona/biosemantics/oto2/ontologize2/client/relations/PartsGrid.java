@@ -1,8 +1,10 @@
 package edu.arizona.biosemantics.oto2.ontologize2.client.relations;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.Style.BorderStyle;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.shared.EventBus;
@@ -13,6 +15,13 @@ import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.sencha.gxt.core.client.util.Margins;
+import com.sencha.gxt.dnd.core.client.DndDragStartEvent;
+import com.sencha.gxt.dnd.core.client.DndDropEvent;
+import com.sencha.gxt.dnd.core.client.DragSource;
+import com.sencha.gxt.dnd.core.client.DropTarget;
+import com.sencha.gxt.dnd.core.client.GridDragSource;
+import com.sencha.gxt.dnd.core.client.DndDropEvent.DndDropHandler;
+import com.sencha.gxt.dnd.core.client.GridDragSource.GridDragSourceMessages;
 import com.sencha.gxt.widget.core.client.ContentPanel;
 import com.sencha.gxt.widget.core.client.Dialog;
 import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
@@ -32,13 +41,15 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.Alerter;
 import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.ReplaceRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Source;
+import edu.arizona.biosemantics.oto2.ontologize2.client.tree.node.TextTreeNode;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Origin;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Type;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Candidate;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 
 public class PartsGrid extends MenuTermsGrid {
 
@@ -47,6 +58,49 @@ public class PartsGrid extends MenuTermsGrid {
 	
 	public PartsGrid(EventBus eventBus) {
 		super(eventBus, Type.PART_OF);
+		
+		GridDragSource<Row> dndSource = new GridDragSource<Row>(grid) {
+			@Override
+			protected void onDragStart(DndDragStartEvent event) {
+				super.onDragStart(event);
+				Element element = event.getDragStartEvent().getStartElement();
+				int targetRowIndex = grid.getView().findRowIndex(element);
+				int targetColIndex = grid.getView().findCellIndex(element, null);
+				Row row = store.get(targetRowIndex);
+				Vertex v = row.getLead();
+				if(targetColIndex > 0) {
+					v = row.getAttached().get(targetColIndex - 1).getDest();
+				}
+				
+				OntologyGraph g = ModelController.getCollection().getGraph();
+				List<Edge> inRelations = g.getInRelations(v, type);
+				if(inRelations.size() > 1) {
+					Alerter.showAlert("Moving", "Moving of term with more than one parent is not allowed"); // at this time
+					event.setCancelled(true);
+				}
+				if(inRelations.size() == 1)
+					event.setData(inRelations.get(0));
+				else {
+					Alerter.showAlert("Moving", "Cannot move the root");
+					event.setCancelled(true);
+				}
+			}
+		};
+		dropTarget.setAllowSelfAsSource(true);
+		dropTarget.addDropHandler(new DndDropHandler() {
+			@Override
+			public void onDrop(DndDropEvent event) {
+				Element element = event.getDragEndEvent().getNativeEvent().getEventTarget().<Element> cast();
+				int targetRowIndex = grid.getView().findRowIndex(element);
+				int targetColIndex = grid.getView().findCellIndex(element, null);
+				Row row = store.get(targetRowIndex);
+				
+				if(event.getData() instanceof Edge) {
+					Edge r = (Edge)event.getData();
+					fire(new ReplaceRelationEvent(r, row.getLead()));
+				}
+			}
+		});
 	}
 	
 	@Override
@@ -54,15 +108,15 @@ public class PartsGrid extends MenuTermsGrid {
 		if(e instanceof CreateRelationEvent) {
 			final CreateRelationEvent createRelationEvent = (CreateRelationEvent)e;
 			OntologyGraph g = ModelController.getCollection().getGraph();
-			for(Relation r : createRelationEvent.getRelations()) {
+			for(Edge r : createRelationEvent.getRelations()) {
 				try {
 					g.isValidSubclass(r);
 					
-					Vertex source = r.getSource();
-					Vertex dest = r.getDestination();
-					List<Relation> existingRelations = g.getInRelations(dest, type);
+					Vertex source = r.getSrc();
+					Vertex dest = r.getDest();
+					List<Edge> existingRelations = g.getInRelations(dest, type);
 					if(!existingRelations.isEmpty()) {
-						Vertex existSource = existingRelations.get(0).getSource();				
+						Vertex existSource = existingRelations.get(0).getSrc();				
 						/*final MessageBox box = Alerter.showConfirm("Create Part", 
 							"\"" + dest + "\" is already a part of \"" + existSource +  "\".</br></br></br>" + 
 								"Do you agree to continue as follows: </br>" + 
@@ -149,23 +203,23 @@ public class PartsGrid extends MenuTermsGrid {
 		}
 	}	
 
-	protected void createRelation(Relation r) {
-		if(r.getEdge().getType().equals(Type.PART_OF)) {
+	protected void createRelation(Edge r) {
+		if(r.getType().equals(Type.PART_OF)) {
 			OntologyGraph g = ModelController.getCollection().getGraph();
-			Vertex dest = r.getDestination();
-			Vertex src = r.getSource();
+			Vertex dest = r.getDest();
+			Vertex src = r.getSrc();
 			String newValue = src + " " + dest;
 			
-			List<Relation> parentRelations = g.getInRelations(dest, Type.PART_OF);
+			List<Edge> parentRelations = g.getInRelations(dest, Type.PART_OF);
 			if(!parentRelations.isEmpty()) {			
-				for(Relation parentRelation : parentRelations) {
-					Vertex parentSrc = parentRelation.getSource();
+				for(Edge parentRelation : parentRelations) {
+					Vertex parentSrc = parentRelation.getSrc();
 					Vertex disambiguatedDest = new Vertex(parentSrc + " " + dest);
 					
 					replace(parentSrc, dest, disambiguatedDest);
 				}
 				
-				super.createRelation(new Relation(src, new Vertex(newValue), r.getEdge()));
+				super.createRelation(new Edge(src, new Vertex(newValue), r.getType(), r.getOrigin()));
 			} else {
 				super.createRelation(r);
 			}
@@ -181,9 +235,9 @@ public class PartsGrid extends MenuTermsGrid {
 		leadRowMap.remove(dest);
 		updateRow(leadRowMap.get(newDest));
 		
-		for(Relation r : leadRowMap.get(newDest).getAttached()) {
-			if(r.getDestination().getValue().startsWith(dest.getValue())) {
-				replace(dest, r.getDestination(), new Vertex(newDest.getValue() + " " + r.getDestination().getValue()));
+		for(Edge r : leadRowMap.get(newDest).getAttached()) {
+			if(r.getDest().getValue().startsWith(dest.getValue())) {
+				replace(dest, r.getDest(), new Vertex(newDest.getValue() + " " + r.getDest().getValue()));
 			}
 		}
 	}

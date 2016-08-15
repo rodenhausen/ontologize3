@@ -12,7 +12,7 @@ import java.util.Set;
 
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.util.EdgeType;
-import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Origin;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Type;
 
 public class OntologyGraph implements Serializable {
@@ -79,8 +79,8 @@ public class OntologyGraph implements Serializable {
 
 		public static enum Type {
 			SUBCLASS_OF("category", "superclass", "subclass", "subclasses", "category hierarchy", "Thing"), 
-					PART_OF("part", "parent", "part", "parts", "part-of hierarchy", "Whole Organism"), 
-					SYNONYM_OF("synonym", "preferred term", "synonym", "synonyms", "synonym-hierarchy", "Synonym-Root");
+			PART_OF("part", "parent", "part", "parts", "part-of hierarchy", "Whole Organism"), 
+			SYNONYM_OF("synonym", "preferred term", "synonym", "synonyms", "synonym-hierarchy", "Synonym-Root");
 
 			private String displayLabel;
 			private String sourceLabel;
@@ -124,20 +124,24 @@ public class OntologyGraph implements Serializable {
 			}
 		}
 
-		public static enum Source {
+		public static enum Origin {
 			USER, IMPORT;
 		}
 
 		private static final long serialVersionUID = 1L;
 		private Type type;
-		private Source source;
+		private Origin origin;
+		private Vertex src;
+		private Vertex dest;
 
 		public Edge() {
 		}
 
-		public Edge(Type type, Source source) {
+		public Edge(Vertex src, Vertex dest, Type type, Origin origin) {
+			this.src = src;
+			this.dest = dest;
 			this.type = type;
-			this.source = source;
+			this.origin = origin;
 		}
 
 		public Type getType() {
@@ -148,17 +152,59 @@ public class OntologyGraph implements Serializable {
 			this.type = type;
 		}
 
-		public Source getSource() {
-			return source;
-		}
-
-		public void setSource(Source source) {
-			this.source = source;
+		public Origin getOrigin() {
+			return origin;
 		}
 
 		@Override
 		public String toString() {
-			return type + " (" + source + ")";
+			return type + " (" + origin + ")";
+		}
+		
+		public Vertex getSrc() {
+			return src;
+		}
+
+		public Vertex getDest() {
+			return dest;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((dest == null) ? 0 : dest.hashCode());
+			result = prime * result
+					+ ((origin == null) ? 0 : origin.hashCode());
+			result = prime * result + ((src == null) ? 0 : src.hashCode());
+			result = prime * result + ((type == null) ? 0 : type.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Edge other = (Edge) obj;
+			if (dest == null) {
+				if (other.dest != null)
+					return false;
+			} else if (!dest.equals(other.dest))
+				return false;
+			if (origin != other.origin)
+				return false;
+			if (src == null) {
+				if (other.src != null)
+					return false;
+			} else if (!src.equals(other.src))
+				return false;
+			if (type != other.type)
+				return false;
+			return true;
 		}
 	}
 
@@ -188,39 +234,39 @@ public class OntologyGraph implements Serializable {
 		return result;
 	}
 
-	public boolean addRelation(Relation relation) throws Exception {
-		switch(relation.getEdge().getType()) {
+	public boolean addRelation(Edge edge) throws Exception {
+		switch(edge.getType()) {
 			case PART_OF:
-				return addPartOf(relation);
+				return addPartOf(edge);
 			case SUBCLASS_OF:
-				return addSubclass(relation);
+				return addSubclass(edge);
 			case SYNONYM_OF:
-				return addSynonym(relation);
+				return addSynonym(edge);
 		}
 		return false;
 	}
 	
-	private boolean doAddRelation(Relation relation) {
-		if(!graph.containsVertex(relation.getSource()))
-			this.addVertex(relation.getSource());
-		if(!graph.containsVertex(relation.getDestination()))
-			this.addVertex(relation.getDestination());
+	private boolean doAddRelation(Edge edge) {
+		if(!graph.containsVertex(edge.getSrc()))
+			this.addVertex(edge.getSrc());
+		if(!graph.containsVertex(edge.getDest()))
+			this.addVertex(edge.getDest());
 		
-		return graph.addEdge(relation.getEdge(), relation.getSource(), relation.getDestination(), EdgeType.DIRECTED);
+		return graph.addEdge(edge, edge.getSrc(), edge.getDest(), EdgeType.DIRECTED);
 	}
 	
-	public boolean isCreatesCircular(Relation potentialRelation) {
+	public boolean isCreatesCircular(Edge potentialRelation) {
 		Set<Vertex> visited = new HashSet<Vertex>();
-		visited.add(potentialRelation.getSource());
+		visited.add(potentialRelation.getSrc());
 		return isCreatesCircular(potentialRelation, visited);
 	}
 	
-	private boolean isCreatesCircular(Relation r, Set<Vertex> visited) {
-		if(visited.contains(r.getDestination()))
+	private boolean isCreatesCircular(Edge e, Set<Vertex> visited) {
+		if(visited.contains(e.getDest()))
 			return true;
 		else
-			visited.add(r.getDestination());
-		for(Relation next : this.getOutRelations(r.getDestination(), r.getEdge().getType())) {
+			visited.add(e.getDest());
+		for(Edge next : this.getOutRelations(e.getDest(), e.getType())) {
 			boolean result = isCreatesCircular(next, visited);
 			if(result)
 				return true;
@@ -235,16 +281,16 @@ public class OntologyGraph implements Serializable {
 	 * - indegree == 1 && in = { root } and outdegree >= 0
 	 * - indegree == 1 && in = { != root } and outdegree == 0
 	 */
-	public boolean isValidSynonym(Relation relation) throws Exception {
-		if(this.existsRelation(relation))
+	public boolean isValidSynonym(Edge e) throws Exception {
+		if(this.existsRelation(e))
 			throw new Exception("This relation already exists");
-		Vertex src = relation.getSource();
-		Vertex dest = relation.getDestination();
+		Vertex src = e.getSrc();
+		Vertex dest = e.getDest();
 		Vertex root = this.getRoot(Type.SYNONYM_OF);
-		List<Relation> srcIn = this.getInRelations(src, Type.SYNONYM_OF);
-		List<Relation> srcOut = this.getInRelations(src, Type.SYNONYM_OF);
-		List<Relation> destIn = this.getInRelations(dest, Type.SYNONYM_OF);
-		List<Relation> destOut = this.getInRelations(dest, Type.SYNONYM_OF);
+		List<Edge> srcIn = this.getInRelations(src, Type.SYNONYM_OF);
+		List<Edge> srcOut = this.getInRelations(src, Type.SYNONYM_OF);
+		List<Edge> destIn = this.getInRelations(dest, Type.SYNONYM_OF);
+		List<Edge> destOut = this.getInRelations(dest, Type.SYNONYM_OF);
 		
 		if(dest.equals(root))
 			throw new Exception("<i>" + root + "</i> can not be used as synonym");
@@ -261,46 +307,46 @@ public class OntologyGraph implements Serializable {
 		return true;
 	}
 	
-	private boolean addSynonym(Relation relation) throws Exception {
-		if(isValidSynonym(relation))
-			return doAddRelation(relation);
+	private boolean addSynonym(Edge e) throws Exception {
+		if(isValidSynonym(e))
+			return doAddRelation(e);
 		return false;
 	}
 
 	/**
 	 * - No circular relationships allowed
 	 */	
-	public boolean isValidSubclass(Relation relation) throws Exception {
-		if(this.existsRelation(relation))
+	public boolean isValidSubclass(Edge e) throws Exception {
+		if(this.existsRelation(e))
 			throw new Exception("This relation already exists");
-		if(isCreatesCircular(relation))
+		if(isCreatesCircular(e))
 			throw new Exception("This relation would create a circular relationship");
 		
 		return true;
 	}
 
-	private boolean existsRelation(Relation r) {
-		for(Edge e : graph.getOutEdges(r.getSource())) {
-            if(graph.getOpposite(r.getSource(), e).equals(r.getDestination()))
-            	if(e.getType().equals(r.getEdge().getType()))
+	private boolean existsRelation(Edge r) {
+		for(Edge e : graph.getOutEdges(r.getSrc())) {
+            if(graph.getOpposite(r.getSrc(), e).equals(r.getDest()))
+            	if(e.getType().equals(r.getType()))
             		return true;
         }
 		return false;
 	}
 
-	private boolean addSubclass(Relation relation) throws Exception {
-		if(isValidSubclass(relation))
-			return doAddRelation(relation);
+	private boolean addSubclass(Edge e) throws Exception {
+		if(isValidSubclass(e))
+			return doAddRelation(e);
 		return false;
 	}
 
 	/**
 	 * - No circular relationships allowed
 	 */
-	public boolean isValidPartOf(Relation relation) throws Exception {
-		if(this.existsRelation(relation))
+	public boolean isValidPartOf(Edge e) throws Exception {
+		if(this.existsRelation(e))
 			throw new Exception("This relation already exists");
-		if(isCreatesCircular(relation))
+		if(isCreatesCircular(e))
 			throw new Exception("This relation would create a circular relationship");
 		return true;
 	}
@@ -315,45 +361,44 @@ public class OntologyGraph implements Serializable {
 	 * stem, stem leaflet (part)
 	 * leaf, leaf leaflet, stem leaflet (subclass)
 	 */
-	private boolean addPartOf(Relation relation) throws Exception {
-		if(isValidPartOf(relation)) {
-			Vertex src = relation.getSource();
-			Vertex dest = relation.getDestination();
+	private boolean addPartOf(Edge e) throws Exception {
+		if(isValidPartOf(e)) {
+			Vertex src = e.getSrc();
+			Vertex dest = e.getDest();
 			String newValue = src + " " + dest;
-			List<Relation> parentRelations = this.getInRelations(dest, Type.PART_OF);
+			List<Edge> parentRelations = this.getInRelations(dest, Type.PART_OF);
 			if(!parentRelations.isEmpty()) {			
-				for(Relation parentRelation : parentRelations) {
-					Vertex parentSrc = parentRelation.getSource();
+				for(Edge parentRelation : parentRelations) {
+					Vertex parentSrc = parentRelation.getSrc();
 					Vertex disambiguatedDest = new Vertex(parentSrc + " " + dest);
-					this.addRelation(new Relation(dest, disambiguatedDest, 
-							new Edge(Type.SUBCLASS_OF, relation.getEdge().getSource())));
+					this.addRelation(new Edge(dest, disambiguatedDest, Type.SUBCLASS_OF, e.getOrigin()));
 					renameVertex(dest, newValue, Type.PART_OF);
 				}
-				relation.getDestination().setValue(newValue);
+				e.getDest().setValue(newValue);
 			}
-			return doAddRelation(relation);
+			return doAddRelation(e);
 		}
 		return false;
 	}
 
 	private void renameVertex(Vertex v, String newValue, Type... types) throws Exception {
 		Vertex newV = new Vertex(newValue);
-		List<Relation> inRelations = new LinkedList<Relation>();
-		List<Relation> outRelations = new LinkedList<Relation>();
+		List<Edge> inRelations = new LinkedList<Edge>();
+		List<Edge> outRelations = new LinkedList<Edge>();
 		for(Type type : types) {
 			inRelations.addAll(this.getInRelations(v, type));
 			outRelations.addAll(this.getOutRelations(v, type));
 		}
 		
 		this.removeVertex(v);
-		for(Relation inRelation : inRelations) {
-			inRelation.setDestination(newV);
+		for(Edge inRelation : inRelations) {
+			Edge newEdge = new Edge(inRelation.getSrc(), newV, inRelation.getType(), inRelation.getOrigin());
 			this.addRelation(inRelation);
 		}
-		for(Relation outRelation : outRelations) {
-			outRelation.setSource(newV);
+		for(Edge outRelation : outRelations) {
+			Edge newEdge = new Edge(newV, outRelation.getDest(), outRelation.getType(), outRelation.getOrigin());
 			this.addRelation(outRelation);
-			Vertex dest = outRelation.getDestination();
+			Vertex dest = outRelation.getDest();
 			
 			//on prefix-match with old parent name, propagate rename to children
 			if(dest.getValue().startsWith(v.getValue() + " ")) {
@@ -371,37 +416,55 @@ public class OntologyGraph implements Serializable {
 		return index.get(type.getRootLabel());
 	}
 	
-	public Relation getRelation(Edge edge) {
-		return new Relation(graph.getSource(edge), graph.getDest(edge), edge);
-	}
-	
-	public List<Relation> getOutRelations(Vertex vertex, Type type) {
-		List<Relation> result = new LinkedList<Relation>();
+	public List<Edge> getOutRelations(Vertex vertex, Type type) {
+		List<Edge> result = new LinkedList<Edge>();
 		if(graph.containsVertex(vertex)) {
 			java.util.Collection<Edge> edges = graph.getOutEdges(vertex);
 			for(Edge edge : edges) {
 				if(edge.getType().equals(type))
-					result.add(new Relation(vertex, graph.getDest(edge), edge));
+					result.add(edge);
 			}
 		}
 		return result;
 	}
 	
-	public List<Relation> getInRelations(Vertex vertex, Type type) {
-		List<Relation> result = new LinkedList<Relation>();
+	public List<Edge> getInRelations(Vertex vertex, Type type) {
+		List<Edge> result = new LinkedList<Edge>();
 		if(graph.containsVertex(vertex)) {
 			java.util.Collection<Edge> edges = graph.getInEdges(vertex);
 			for(Edge edge : edges) {
 				if(edge.getType().equals(type))
-					result.add(new Relation(graph.getSource(edge), vertex, edge));
+					result.add(edge);
 			}
 		}
 		return result;
 	}
 
-	public void removeRelation(Relation relation) {
-		graph.removeEdge(relation.getEdge());
-		graph.removeVertex(relation.getDestination());
+	public void removeRelation(Edge e, boolean recursive) {
+		if(recursive) {
+			graph.removeEdge(e);
+			for(Edge outRelation : this.getOutRelations(e.getDest(), e.getType())) {
+				this.removeRelation(outRelation, recursive);
+			}
+			if(this.getInRelations(e.getDest(), e.getType()).isEmpty()) {
+				this.removeVertex(e.getDest());
+			}
+		} else {
+			graph.removeEdge(e);
+			for(Edge outRelation : this.getOutRelations(e.getDest(), e.getType())) {
+				try {
+					Edge newEdge = new Edge(e.getSrc(), outRelation.getDest(), e.getType(), Origin.USER);
+					this.addRelation(newEdge);
+				} catch(Exception ex) {
+					//This should never happen
+					System.out.println("Failed to reattach child nodes");
+					ex.printStackTrace();
+				}
+			}
+			if(this.getInRelations(e.getDest(), e.getType()).isEmpty()) {
+				this.removeVertex(e.getDest());
+			}
+		}
 	}
 	
 	public OntologyGraph getSubGraph(Type... types) throws Exception {
@@ -414,13 +477,31 @@ public class OntologyGraph implements Serializable {
 	}
 
 	private void addRelationsRecursively(OntologyGraph g, Vertex source, Type type) throws Exception {
-		for(Relation r : this.getOutRelations(source, type)) {
-			this.addRelation(r);
-			this.addRelationsRecursively(g, r.getDestination(), type);
+		for(Edge e : this.getOutRelations(source, type)) {
+			this.addRelation(e);
+			this.addRelationsRecursively(g, e.getDest(), type);
 		}
 	}
 
 	public Collection<Vertex> getVertices() {
 		return graph.getVertices();
+	}
+
+	public void replaceRelation(Edge oldRelation, Vertex newSource) throws Exception {
+		graph.removeEdge(oldRelation);
+		try {
+			Edge newEdge = new Edge(newSource, oldRelation.getDest(), oldRelation.getType(), oldRelation.getOrigin());
+			this.addRelation(newEdge);			
+		} catch(Exception e) {
+			this.addRelation(oldRelation);
+			throw e;
+		}
+		
+		if(oldRelation.getType().equals(Type.SYNONYM_OF)) {
+			for(Edge e : this.getOutRelations(oldRelation.getDest(), Type.SYNONYM_OF)) {
+				this.removeRelation(e, true);
+				this.addRelation(new Edge(newSource, e.getDest(), oldRelation.getType(), oldRelation.getOrigin()));
+			}
+		}
 	}
 }

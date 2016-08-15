@@ -20,8 +20,7 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.node.VertexTreeNode;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Source;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Origin;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Type;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
@@ -66,60 +65,60 @@ public class SubclassTreeView extends TreeView {
 	}
 
 	@Override
-	protected void createRelation(Relation r) {
-		if(r.getEdge().getType().equals(type)) {
+	protected void createRelation(Edge r) {
+		if(r.getType().equals(type)) {
 			if(!isVisible(r))
 				return;
 			
 			VertexTreeNode sourceNode = null;
-	 		if(vertexNodeMap.containsKey(r.getSource())) {
-				sourceNode = vertexNodeMap.get(r.getSource()).iterator().next();
+	 		if(vertexNodeMap.containsKey(r.getSrc())) {
+				sourceNode = vertexNodeMap.get(r.getSrc()).iterator().next();
 			} else {
-				sourceNode = new VertexTreeNode(r.getSource());
+				sourceNode = new VertexTreeNode(r.getSrc());
 				add(null, sourceNode);
 			}
 	 		//create either way, to get a new id
-	 		VertexTreeNode destinationNode = new VertexTreeNode(r.getDestination());
+	 		VertexTreeNode destinationNode = new VertexTreeNode(r.getDest());
 	 		add(sourceNode, destinationNode);
 	 		treeGrid.setExpanded(sourceNode, true);
 			
-	 		if(vertexNodeMap.get(r.getDestination()).size() > 1) {
+	 		if(vertexNodeMap.get(r.getDest()).size() > 1) {
 				//remove child nodes below already existings
-				for(VertexTreeNode n : vertexNodeMap.get(r.getDestination())) {
+				for(VertexTreeNode n : vertexNodeMap.get(r.getDest())) {
 					removeAllChildren(n);
 				}
 			}
 		}
 		
-		if(r.getEdge().getType().equals(Type.PART_OF)) {
+		if(r.getType().equals(Type.PART_OF)) {
 			OntologyGraph g = ModelController.getCollection().getGraph();
-			Vertex dest = r.getDestination();
-			Vertex src = r.getSource();
+			Vertex dest = r.getDest();
+			Vertex src = r.getSrc();
 			String newValue = src + " " + dest;
 			
-			List<Relation> parentRelations = g.getInRelations(dest, Type.PART_OF);
+			List<Edge> parentRelations = g.getInRelations(dest, Type.PART_OF);
 			if(!parentRelations.isEmpty()) {			
-				createRelation(new Relation(g.getRoot(Type.SUBCLASS_OF), dest, new Edge(Type.SUBCLASS_OF, Source.USER)));
-				for(Relation parentRelation : parentRelations) {
-					Vertex parentSrc = parentRelation.getSource();
+				createRelation(new Edge(g.getRoot(Type.SUBCLASS_OF), dest, Type.SUBCLASS_OF, Origin.USER));
+				for(Edge parentRelation : parentRelations) {
+					Vertex parentSrc = parentRelation.getSrc();
 					Vertex disambiguatedDest = new Vertex(parentSrc + " " + dest);
 					
-					createRelation(new Relation(dest, disambiguatedDest, new Edge(Type.SUBCLASS_OF, Source.USER)));
+					createRelation(new Edge(dest, disambiguatedDest, Type.SUBCLASS_OF, Origin.USER));
 				}
-				createRelation(new Relation(dest, new Vertex(newValue), new Edge(Type.SUBCLASS_OF, Source.USER)));
+				createRelation(new Edge(dest, new Vertex(newValue), Type.SUBCLASS_OF, Origin.USER));
 			}
 		}
 	}
 
-	private boolean isVisible(Relation r) {
+	private boolean isVisible(Edge r) {
 		OntologyGraph g = ModelController.getCollection().getGraph();
 		Vertex currentRoot = getRoot();
-		Vertex source = r.getSource();
+		Vertex source = r.getSrc();
 		if(currentRoot.equals(source))
 			return true;
 		if(g.getInRelations(source, Type.SUBCLASS_OF).size() > 1) 
 			return false;
-		for(Relation in : g.getInRelations(r.getSource(), type)) {
+		for(Edge in : g.getInRelations(r.getSrc(), type)) {
 			if(!isVisible(in))
 				return false;
 		}
@@ -138,9 +137,9 @@ public class SubclassTreeView extends TreeView {
 		if(!currentRoot.equals(source) && g.getInRelations(source, Type.SUBCLASS_OF).size() > 1) {
 			return;
 		} else {
-			for(Relation r : g.getOutRelations(source, type)) {
+			for(Edge r : g.getOutRelations(source, type)) {
 				createRelation(r);
-				createFromVertex(g, r.getDestination());
+				createFromVertex(g, r.getDest());
 			}
 		}
 	}
@@ -162,22 +161,22 @@ public class SubclassTreeView extends TreeView {
 	}
 	
 	@Override
-	protected void onCreateRelationEffectiveInModel(Relation r) {
-		if(r.getEdge().getType().equals(type)) {
+	protected void onCreateRelationEffectiveInModel(Edge r) {
+		if(r.getType().equals(type)) {
 			if(!isVisible(r))
 				return;
-			if(vertexNodeMap.containsKey(r.getDestination()))
-				refreshNodes(vertexNodeMap.get(r.getDestination()));
+			if(vertexNodeMap.containsKey(r.getDest()))
+				refreshNodes(vertexNodeMap.get(r.getDest()));
 		}
 	}
 	
 	@Override
-	protected void onRemoveRelationEffectiveInModel(Relation r) {
-		if(r.getEdge().getType().equals(type)) {
+	protected void onRemoveRelationEffectiveInModel(Edge r) {
+		if(r.getType().equals(type)) {
 			if(!isVisible(r))
 				return;
-			if(vertexNodeMap.containsKey(r.getDestination()))
-				refreshNodes(vertexNodeMap.get(r.getDestination()));
+			if(vertexNodeMap.containsKey(r.getDest()))
+				refreshNodes(vertexNodeMap.get(r.getDest()));
 		}
 	}
 	
@@ -185,7 +184,7 @@ public class SubclassTreeView extends TreeView {
 	protected void onLoadCollectionEffectiveInModel() {
 		OntologyGraph g = ModelController.getCollection().getGraph();
 		for(Vertex v : g.getVertices()) {
-			List<Relation> inRelations = g.getInRelations(v, type);
+			List<Edge> inRelations = g.getInRelations(v, type);
 			if(inRelations.size() > 1) {
 				refreshNodes(vertexNodeMap.get(v));
 			}

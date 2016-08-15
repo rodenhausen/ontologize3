@@ -33,9 +33,9 @@ import edu.arizona.biosemantics.common.ontology.graph.Reader;
 import edu.arizona.biosemantics.oto2.ontologize2.server.Configuration;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Type;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 
 public class OWLWriter {
 	
@@ -122,21 +122,21 @@ public class OWLWriter {
 			System.out.println("create " + v.getValue());
 			OWLClass oc = om.getOWLDataFactory().getOWLClass(IRI.create(iriMap.get(v)));
 			
-			List<Relation> inRs = g.getInRelations(v, Type.SUBCLASS_OF);
-			for(Relation r : inRs) {
-				String sourceIri = iriMap.get(r.getSource());
+			List<Edge> inRs = g.getInRelations(v, Type.SUBCLASS_OF);
+			for(Edge r : inRs) {
+				String sourceIri = iriMap.get(r.getSrc());
 				OWLClass sc = om.getOWLDataFactory().getOWLClass(IRI.create(sourceIri));
 				axm.addSuperclass(o, oc, sc);
 			}
 			inRs = g.getInRelations(v, Type.PART_OF);
-			for(Relation r : inRs) {
-				String sourceIri = iriMap.get(r.getSource());
+			for(Edge r : inRs) {
+				String sourceIri = iriMap.get(r.getSrc());
 				OWLClass poc = om.getOWLDataFactory().getOWLClass(IRI.create(sourceIri));
 				axm.addPartOf(o, oc, poc);
 			}
 			inRs = g.getInRelations(v, Type.SYNONYM_OF);
-			for(Relation r : inRs) {
-				String sourceIri = iriMap.get(r.getSource());
+			for(Edge r : inRs) {
+				String sourceIri = iriMap.get(r.getSrc());
 				OWLClass prefc = om.getOWLDataFactory().getOWLClass(IRI.create(sourceIri));
 				axm.addSynonym(o, v.getValue(), prefc);
 			}

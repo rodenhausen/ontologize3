@@ -38,11 +38,10 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
 import edu.arizona.biosemantics.oto2.ontologize2.client.common.TextAreaMessageBox;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Source;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Origin;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Type;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 
 public class MenuTermsGrid extends TermsGrid {
 	
@@ -123,14 +122,14 @@ public class MenuTermsGrid extends TermsGrid {
 							if(!terms[0].trim().isEmpty()) {
 								Vertex source = new Vertex(terms[0]);
 								if(!alreadyAttached.contains(source)) {
-									eventBus.fireEvent(new CreateRelationEvent(new Relation(root, source, new Edge(type, Source.USER))));
+									eventBus.fireEvent(new CreateRelationEvent(new Edge(root, source, type, Origin.USER)));
 									alreadyAttached.add(source);
 								}
 								for(int i=1; i<terms.length; i++) {
 									if(terms[i].trim().isEmpty()) 
 										continue;
 									Vertex target = new Vertex(terms[i]);
-									eventBus.fireEvent(new CreateRelationEvent(new Relation(source, target, new Edge(type, Source.USER))));
+									eventBus.fireEvent(new CreateRelationEvent(new Edge(source, target, type, Origin.USER)));
 									alreadyAttached.add(target);
 								}
 							} else {
@@ -239,8 +238,8 @@ public class MenuTermsGrid extends TermsGrid {
 				@Override
 				public boolean select(Store<Row> store, Row parent, Row item) {
 					String all = item.getLead().getValue() + " ";
-					for(Relation r : item.getAttached())
-						all += r.getDestination().getValue() + " ";
+					for(Edge r : item.getAttached())
+						all += r.getDest().getValue() + " ";
 					return all.contains(filterField.getText());
 				}
 			});
@@ -256,8 +255,8 @@ public class MenuTermsGrid extends TermsGrid {
 		for(Row row : this.getAll()) {
 			if(row.hasAttacheds()) {
 				sb.append(row.getLead());
-				for(Relation a : row.getAttached())
-					sb.append(", " + a.getDestination().getValue());
+				for(Edge a : row.getAttached())
+					sb.append(", " + a.getDest().getValue());
 			}
 			sb.append("\n");
 		}

@@ -8,8 +8,14 @@ import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.event.shared.GwtEvent;
 
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent.Handler;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 
+/**
+ * Removes edge + destination node
+ * if recursive: remove everything below destination node too
+ * else: remove only edge + destination node. Add edges from source to all of destinations child nodes.
+ *  * @author rodenhausen
+ */
 public class RemoveRelationEvent extends GwtEvent<Handler> implements Serializable {
 
 	public interface Handler extends EventHandler {
@@ -17,18 +23,18 @@ public class RemoveRelationEvent extends GwtEvent<Handler> implements Serializab
 	}
 	
     public static Type<Handler> TYPE = new Type<Handler>();
-	private Relation[] relations = new Relation[] { };
+	private Edge[] relations = new Edge[] { };
 	private boolean isEffectiveInModel = false;
 	private boolean recursive = true;
     
-	private RemoveRelationEvent() { }
+	public RemoveRelationEvent() { }
 	
-    public RemoveRelationEvent(boolean recursive, Relation... relations) { 
+    public RemoveRelationEvent(boolean recursive, Edge... relations) { 
     	this.relations = relations;
     	this.recursive = recursive;
     }
     
-	public RemoveRelationEvent(boolean recursive, List<Relation> relations) {
+	public RemoveRelationEvent(boolean recursive, List<Edge> relations) {
 		this.relations = relations.toArray(this.relations);
 		this.recursive = recursive;
 	}
@@ -43,7 +49,7 @@ public class RemoveRelationEvent extends GwtEvent<Handler> implements Serializab
 		handler.onRemove(this);
 	}
 
-	public Relation[] getRelations() {
+	public Edge[] getRelations() {
 		return relations;
 	}
 

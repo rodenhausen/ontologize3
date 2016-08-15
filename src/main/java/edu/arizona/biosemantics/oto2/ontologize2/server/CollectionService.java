@@ -15,13 +15,18 @@ import java.util.List;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 import edu.arizona.biosemantics.common.log.LogLevel;
+import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEvent;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.server.owl.OWLWriter;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.AddCandidateResult;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.ICollectionService;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Candidate;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Collection;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Origin;
 import edu.uci.ics.jung.graph.util.EdgeType;
 
 public class CollectionService extends RemoteServiceServlet implements ICollectionService {
@@ -87,7 +92,7 @@ public class CollectionService extends RemoteServiceServlet implements ICollecti
 	}
 
 	@Override
-	public boolean add(int collectionId, String secret, Relation relation)	throws Exception {
+	public boolean add(int collectionId, String secret, Edge relation)	throws Exception {
 		Collection collection = this.get(collectionId, secret);
 		boolean result = collection.getGraph().addRelation(relation);
 		update(collection);
@@ -95,9 +100,16 @@ public class CollectionService extends RemoteServiceServlet implements ICollecti
 	}
 	
 	@Override
-	public void remove(int collectionId, String secret, Relation relation) throws Exception {
+	public void remove(int collectionId, String secret, Edge relation, boolean recursive) throws Exception {
 		Collection collection = this.get(collectionId, secret);
-		collection.getGraph().removeRelation(relation);
+		collection.getGraph().removeRelation(relation, recursive);
+		update(collection);
+	}
+	
+	@Override
+	public void replace(int collectionId, String secret, Edge oldRelation, Vertex newSource) throws Exception {
+		Collection collection = this.get(collectionId, secret);
+		collection.getGraph().replaceRelation(oldRelation, newSource);
 		update(collection);
 	}
 
@@ -153,4 +165,6 @@ public class CollectionService extends RemoteServiceServlet implements ICollecti
 		 byte[] encoded = Files.readAllBytes(Paths.get(file.getAbsolutePath()));
 		  return new String(encoded, "UTF8");
 	}
+
+
 }

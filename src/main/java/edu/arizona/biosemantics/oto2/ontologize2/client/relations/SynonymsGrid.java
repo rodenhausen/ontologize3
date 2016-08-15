@@ -2,13 +2,20 @@ package edu.arizona.biosemantics.oto2.ontologize2.client.relations;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 
+import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.Style.BorderStyle;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.event.shared.GwtEvent;
 import com.sencha.gxt.core.client.ValueProvider;
+import com.sencha.gxt.dnd.core.client.DndDragStartEvent;
+import com.sencha.gxt.dnd.core.client.DndDropEvent;
+import com.sencha.gxt.dnd.core.client.GridDragSource;
+import com.sencha.gxt.dnd.core.client.DndDropEvent.DndDropHandler;
 import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
 import com.sencha.gxt.widget.core.client.box.MessageBox;
 import com.sencha.gxt.widget.core.client.box.PromptMessageBox;
@@ -22,6 +29,7 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.ModelController;
 import edu.arizona.biosemantics.oto2.ontologize2.client.common.TextAreaMessageBox;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.ReplaceRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.cell.DefaultMenuCreator;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.cell.LeadCell;
@@ -30,9 +38,8 @@ import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Candidate;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Source;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Origin;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Type;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 
 public class SynonymsGrid extends MenuTermsGrid {
 
@@ -49,7 +56,7 @@ public class SynonymsGrid extends MenuTermsGrid {
 					public void onSelect(SelectEvent event) {
 						Vertex source = new Vertex(type.getRootLabel());
 						Vertex target = new Vertex(box.getTextField().getText());
-						Relation relation = new Relation(source, target, new Edge(type, Source.USER));
+						Edge relation = new Edge(source, target, type, Origin.USER);
 						CreateRelationEvent createRelationEvent = new CreateRelationEvent(relation);
 						fire(createRelationEvent);
 					}
@@ -58,6 +65,50 @@ public class SynonymsGrid extends MenuTermsGrid {
 		});
 		
 		buttonBar.insert(addButton, 0);
+		
+		GridDragSource<Row> dndSource = new GridDragSource<Row>(grid) {
+			@Override
+			protected void onDragStart(DndDragStartEvent event) {
+				super.onDragStart(event);
+				Element element = event.getDragStartEvent().getStartElement();
+				int targetRowIndex = grid.getView().findRowIndex(element);
+				int targetColIndex = grid.getView().findCellIndex(element, null);
+				Row row = store.get(targetRowIndex);
+				Vertex v = row.getLead();
+				if(targetColIndex > 0) {
+					v = row.getAttached().get(targetColIndex - 1).getDest();
+				}
+				
+				OntologyGraph g = ModelController.getCollection().getGraph();
+				List<Edge> inRelations = g.getInRelations(v, type);
+				if(inRelations.size() > 1) {
+					Alerter.showAlert("Moving", "Moving of term with more than one preferred term is not allowed"); // at this time
+					event.setCancelled(true);
+				}
+				if(inRelations.size() == 1)
+					event.setData(inRelations.get(0));
+				else {
+					Alerter.showAlert("Moving", "Cannot move the root");
+					event.setCancelled(true);
+				}
+			}
+		};
+		
+		dropTarget.setAllowSelfAsSource(true);
+		dropTarget.addDropHandler(new DndDropHandler() {
+			@Override
+			public void onDrop(DndDropEvent event) {
+				Element element = event.getDragEndEvent().getNativeEvent().getEventTarget().<Element> cast();
+				int targetRowIndex = grid.getView().findRowIndex(element);
+				int targetColIndex = grid.getView().findCellIndex(element, null);
+				Row row = store.get(targetRowIndex);
+				
+				if(event.getData() instanceof Edge) {
+					Edge r = (Edge)event.getData();
+					fire(new ReplaceRelationEvent(r, row.getLead()));
+				}
+			}
+		});
 	}
 	
 	@Override
@@ -65,7 +116,7 @@ public class SynonymsGrid extends MenuTermsGrid {
 		if(e instanceof CreateRelationEvent) {
 			final CreateRelationEvent createRelationEvent = (CreateRelationEvent)e;
 			OntologyGraph g = ModelController.getCollection().getGraph();
-			for(Relation r : createRelationEvent.getRelations()) {
+			for(Edge r : createRelationEvent.getRelations()) {
 				try {
 					g.isValidSynonym(r);
 					eventBus.fireEvent(createRelationEvent);
@@ -92,12 +143,12 @@ public class SynonymsGrid extends MenuTermsGrid {
 	}
 	
 	@Override
-	protected void createRelation(Relation r) {
-		if(r.getEdge().getType().equals(type)) {
+	protected void createRelation(Edge r) {
+		if(r.getType().equals(type)) {
 			OntologyGraph g = ModelController.getCollection().getGraph();
-			if(r.getSource().equals(g.getRoot(type))) {
-				if(!leadRowMap.containsKey(r.getDestination()))
-					this.addRow(new Row(r.getDestination()));
+			if(r.getSrc().equals(g.getRoot(type))) {
+				if(!leadRowMap.containsKey(r.getDest()))
+					this.addRow(new Row(r.getDest()));
 			} else {
 				super.createRelation(r);
 			}
@@ -105,7 +156,7 @@ public class SynonymsGrid extends MenuTermsGrid {
 	}
 	
 	@Override
-	protected void addAttached(Row row, Relation... add) throws Exception {
+	protected void addAttached(Row row, Edge... add) throws Exception {
 		row.add(Arrays.asList(add));
 		updateRow(row);
 	}
@@ -151,12 +202,60 @@ public class SynonymsGrid extends MenuTermsGrid {
 	}
 	
 	@Override
-	protected void removeRelation(Relation r, boolean recursive) {
+	protected void removeRelation(Edge r, boolean recursive) {
 		OntologyGraph graph = ModelController.getCollection().getGraph();
-		if(r.getSource().equals(graph.getRoot(type))) {
-			Row row = leadRowMap.get(r.getDestination());
+		if(r.getSrc().equals(graph.getRoot(type))) {
+			Row row = leadRowMap.get(r.getDest());
 			this.removeRow(row, true);
 		} else
 			super.removeRelation(r, recursive);
+	}
+	
+	@Override
+	protected void replaceRelation(Edge oldRelation, Vertex newSource) {
+		if(oldRelation.getType().equals(type)) {	
+			List<Vertex> newAttached = new LinkedList<Vertex>();
+			newAttached.add(oldRelation.getDest());
+			
+			OntologyGraph g = ModelController.getCollection().getGraph();		
+			if(oldRelation.getSrc().equals(g.getRoot(type))) {
+				Row oldRow = leadRowMap.get(oldRelation.getDest());
+				for(Edge relation : oldRow.getAttached()) 
+					newAttached.add(relation.getDest());
+				store.remove(oldRow);
+				leadRowMap.remove(oldRow.getLead());
+			} else if(leadRowMap.containsKey(oldRelation.getSrc())) {
+				Row oldRow = leadRowMap.get(oldRelation.getSrc());
+				oldRow.remove(oldRelation);
+				updateRow(oldRow);
+			}
+			if(newSource.equals(g.getRoot(type))) {
+				Row newRow = new Row(oldRelation.getDest());
+				this.addRow(newRow);
+			} else if(leadRowMap.containsKey(newSource)) {
+				Row newRow = leadRowMap.get(newSource);
+				try {
+					for(Vertex newAttach : newAttached)
+						addAttached(newRow, new Edge(newSource, newAttach, oldRelation.getType(), oldRelation.getOrigin()));
+				} catch (Exception e) {
+					Alerter.showAlert("Failed to replace relation", "Failed to replace relation");
+					return;
+				}
+			} else {
+				Alerter.showAlert("Failed to replace relation", "Failed to replace relation");
+			}
+		}
+	}
+	
+	@Override
+	protected void createRowFromEdgeDrop(Edge oldRelation) {
+		OntologyGraph g = ModelController.getCollection().getGraph();		
+		if(oldRelation.getSrc().equals(g.getRoot(type))) {
+			return;
+		} else {
+			fire(new ReplaceRelationEvent(oldRelation, g.getRoot(type)));
+			//fire(new RemoveRelationEvent(false, oldRelation));
+			//fire(new CreateRelationEvent(new Edge(g.getRoot(type), oldRelation.getDest(), type, Origin.USER)));
+		}	
 	}
 }

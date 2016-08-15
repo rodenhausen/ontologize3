@@ -25,8 +25,8 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.event.SelectTermEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 
 public class AttachedCell extends MenuExtendedCell<Row> {
 
@@ -64,15 +64,15 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 	@Override
 	protected Menu createContextMenu(int columnIndex, int rowIndex) {
 		final Row row = termsGrid.getRow(rowIndex);
-		final Relation r = row.getAttached().get(columnIndex - 1);
+		final Edge r = row.getAttached().get(columnIndex - 1);
 		Menu menu = new Menu();
 		MenuItem removeItem = new MenuItem("Remove this " + termsGrid.getType().getTargetLabel());
 		removeItem.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
 				OntologyGraph g = ModelController.getCollection().getGraph();
-				if(g.getInRelations(r.getDestination(), termsGrid.getType()).size() <= 1) {
-					if(g.getOutRelations(r.getDestination(), termsGrid.getType()).isEmpty()) {
+				if(g.getInRelations(r.getDest(), termsGrid.getType()).size() <= 1) {
+					if(g.getOutRelations(r.getDest(), termsGrid.getType()).isEmpty()) {
 						eventBus.fireEvent(new RemoveRelationEvent(false, r));
 					} else {
 						doAskForRecursiveRemoval(r);
@@ -86,7 +86,7 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 		context.addSelectionHandler(new SelectionHandler<Item>() {
 			@Override
 			public void onSelection(SelectionEvent<Item> event) {
-				eventBus.fireEvent(new SelectTermEvent(r.getDestination().getValue()));
+				eventBus.fireEvent(new SelectTermEvent(r.getDest().getValue()));
 			}
 		});
 		menu.add(removeItem);
@@ -94,16 +94,16 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 		return menu;
 	}
 	
-	protected void doAskForRecursiveRemoval(final Relation relation) {
+	protected void doAskForRecursiveRemoval(final Edge relation) {
 		OntologyGraph g = ModelController.getCollection().getGraph();
 		List<Vertex> targets = new LinkedList<Vertex>();
-		for(Relation r : g.getOutRelations(relation.getDestination(), termsGrid.getType())) 
-			targets.add(r.getDestination());
+		for(Edge r : g.getOutRelations(relation.getDest(), termsGrid.getType())) 
+			targets.add(r.getDest());
 		final MessageBox box = Alerter.showYesNoCancelConfirm("Remove " + termsGrid.getType().getTargetLabel(), 
-				"You are about to remove " + termsGrid.getType().getTargetLabel() + "<i>" + relation.getDestination() + "</i>"
-				+ " from <i>" + relation.getSource() + "</i>.\n" +
-				"Do you want to remove all " + termsGrid.getType().getTargetLabelPlural() + " of <i>" + relation.getDestination() + "</i>" +
-				" or make them instead a " + termsGrid.getType().getTargetLabel() + " of <i>" + relation.getSource() + "</i>?");
+				"You are about to remove " + termsGrid.getType().getTargetLabel() + "<i>" + relation.getDest() + "</i>"
+				+ " from <i>" + relation.getSrc() + "</i>.\n" +
+				"Do you want to remove all " + termsGrid.getType().getTargetLabelPlural() + " of <i>" + relation.getDest() + "</i>" +
+				" or make them instead a " + termsGrid.getType().getTargetLabel() + " of <i>" + relation.getSrc() + "</i>?");
 		box.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler() {
 			@Override
 			public void onSelect(SelectEvent event) {
@@ -167,14 +167,14 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 	public void render(Context context, Row value, final SafeHtmlBuilder sb) {
 		if(value.getAttached().isEmpty() || value.getAttached().size() <= i)
 			return;
-		final Relation r = value.getAttached().get(i);
+		final Edge r = value.getAttached().get(i);
 		String textColor = "#000000";
 		String backgroundColor = "";// "#FFFFFF";
 		OntologyGraph g = ModelController.getCollection().getGraph();
-		if(g.getInRelations(r.getDestination(), r.getEdge().getType()).size() > 1) {
+		if(g.getInRelations(r.getDest(), r.getType()).size() > 1) {
 			backgroundColor = "#ffff00";
 		}
-		switch(r.getEdge().getSource()) {
+		switch(r.getOrigin()) {
 			case IMPORT:
 				//backgroundColor = "#0033cc"; //blue
 				break;
@@ -184,7 +184,7 @@ public class AttachedCell extends MenuExtendedCell<Row> {
 				break;
 		}
 		SafeHtml rendered = templates.cell("", columnHeaderStyles.headInner(),
-				columnHeaderStyles.headButton(), r.getDestination().getValue(), "", backgroundColor, 
+				columnHeaderStyles.headButton(), r.getDest().getValue(), "", backgroundColor, 
 				"", textColor);
 		sb.append(rendered);
 	}

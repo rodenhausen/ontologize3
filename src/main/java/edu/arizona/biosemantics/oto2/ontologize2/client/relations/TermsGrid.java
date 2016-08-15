@@ -28,6 +28,7 @@ import com.sencha.gxt.core.client.dom.ScrollSupport.ScrollMode;
 import com.sencha.gxt.data.shared.ListStore;
 import com.sencha.gxt.data.shared.ModelKeyProvider;
 import com.sencha.gxt.data.shared.PropertyAccess;
+import com.sencha.gxt.data.shared.TreeStore.TreeNode;
 import com.sencha.gxt.dnd.core.client.DND.Operation;
 import com.sencha.gxt.dnd.core.client.DndDropEvent;
 import com.sencha.gxt.dnd.core.client.DndDropEvent.DndDropHandler;
@@ -47,6 +48,7 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEven
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveCandidateEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.ReplaceRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.cell.AttachedCell;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.cell.DefaultMenuCreator;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.cell.LeadCell;
@@ -55,11 +57,10 @@ import edu.arizona.biosemantics.oto2.ontologize2.shared.ICollectionService;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.ICollectionServiceAsync;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Candidate;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Source;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Origin;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Type;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 
 public class TermsGrid implements IsWidget {
 
@@ -69,13 +70,13 @@ public class TermsGrid implements IsWidget {
 		
 		private int id = currentId++;
 		private Vertex lead;
-		private List<Relation> attached = new ArrayList<Relation>();
+		private List<Edge> attached = new ArrayList<Edge>();
 		
 		public Row(Vertex lead) {
 			this.lead = lead;
 		}
 		
-		public Row(Vertex lead, List<Relation> attached) {
+		public Row(Vertex lead, List<Edge> attached) {
 			this(lead);
 			this.attached.addAll(attached);
 		}
@@ -84,50 +85,50 @@ public class TermsGrid implements IsWidget {
 			return lead;
 		}
 		
-		public List<Relation> getAttached() {
-			return new ArrayList<Relation>(this.attached);
+		public List<Edge> getAttached() {
+			return new ArrayList<Edge>(this.attached);
 		}
 
 		public int getId() {
 			return id;
 		}
 		
-		public void add(int index, Relation relation) throws Exception {
+		public void add(int index, Edge relation) throws Exception {
 			if(contains(relation))
 				throw new Exception("Edge already exists.");
 			this.attached.add(index, relation);
 		}
 
-		public void add(Relation relation) throws Exception {
+		public void add(Edge relation) throws Exception {
 			int index = attached.size();
 			this.add(index, relation);
 		}
 		
-		public void add(Collection<Relation> relations) throws Exception {
-			for(Relation relation : relations) 
+		public void add(Collection<Edge> relations) throws Exception {
+			for(Edge relation : relations) 
 				this.add(relation);
 		}
 		
 		public void remove(int i) {
-			Relation relation = attached.remove(i);
+			Edge relation = attached.remove(i);
 		}
 		
 		public void remove(String attached) {
-			for(Relation r : this.attached) {
-				if(r.getDestination().getValue().equals(attached))
+			for(Edge r : this.attached) {
+				if(r.getDest().getValue().equals(attached))
 					this.remove(r);
 			}
 		}
 		
-		public void remove(Relation relation) {
+		public void remove(Edge relation) {
 			for(int i=0; i < attached.size(); i++) {
-				if(attached.get(i).getDestination().equals(relation.getDestination()))
+				if(attached.get(i).getDest().equals(relation.getDest()))
 					this.remove(i);
 			}
 		}
 		
-		public void remove(Collection<Relation> relations) {
-			for(Relation relation : relations)
+		public void remove(Collection<Edge> relations) {
+			for(Edge relation : relations)
 				this.remove(relation);
 		}
 
@@ -144,16 +145,16 @@ public class TermsGrid implements IsWidget {
 		}
 		
 		public boolean containsAttached(Vertex v) {
-			for(Relation relation : attached) {
-				if(relation.getDestination().equals(v))
+			for(Edge relation : attached) {
+				if(relation.getDest().equals(v))
 					return true;
 			}
 			return false;
 		}
 		
-		public boolean contains(Relation relation) {
-			for(Relation r : attached) {
-				if(r.getDestination().equals(relation.getDestination())) {
+		public boolean contains(Edge relation) {
+			for(Edge r : attached) {
+				if(r.getDest().equals(relation.getDest())) {
 					return true;
 				}
 			}
@@ -168,22 +169,24 @@ public class TermsGrid implements IsWidget {
 		public List<Vertex> getAll() {
 			List<Vertex> result = new ArrayList<Vertex>(attached.size() + 1);
 			result.add(this.lead);
-			for(Relation relation : this.attached)
-				result.add(relation.getDestination());
+			for(Edge relation : this.attached)
+				result.add(relation.getDest());
 			return result;
 		}
 
 		public void replaceAttachedDest(Vertex dest, Vertex disambiguatedDest) {
-			for(Relation r : attached) 
-				if(r.getDestination().equals(dest))
-					r.setDestination(disambiguatedDest);
+			for(int i=0; i<attached.size(); i++) {
+				Edge r = attached.get(i);
+				if(r.getDest().equals(dest))
+					attached.set(i, new Edge(r.getSrc(), disambiguatedDest, r.getType(), r.getOrigin()));
+			}
 		}
 		
 		@Override
 		public String toString() {
 			String result = this.lead.getValue();
-			for(Relation a : attached)
-				result += ", " + a.getDestination().getValue();
+			for(Edge a : attached)
+				result += ", " + a.getDest().getValue();
 			return result;
 		}
 	}
@@ -211,6 +214,7 @@ public class TermsGrid implements IsWidget {
 	protected Type type;
 	private VerticalLayoutContainer vlc;
 	private SimpleContainer simpleContainer;
+	protected DropTarget dropTarget;
 	
 	public TermsGrid(final EventBus eventBus, final Type type) {
 		this.eventBus = eventBus;
@@ -221,8 +225,8 @@ public class TermsGrid implements IsWidget {
 		
 		createRowContainer = createCreateRowContainer();
 
-		DropTarget dropTargetGrid = new DropTarget(grid);
-		dropTargetGrid.addDropHandler(new DndDropHandler() {
+		dropTarget = new DropTarget(grid);
+		dropTarget.addDropHandler(new DndDropHandler() {
 			@Override
 			public void onDrop(DndDropEvent event) {
 				Element element = event.getDragEndEvent().getNativeEvent().getEventTarget().<Element> cast();
@@ -230,12 +234,12 @@ public class TermsGrid implements IsWidget {
 				Row row = store.get(targetRowIndex);
 				
 				if(event.getData() instanceof List<?>) {
-					List<Relation> add = new LinkedList<Relation>();
+					List<Edge> add = new LinkedList<Edge>();
 					List<?> list = (List<?>)event.getData();
 					for(Object item : list) {
 						if(item instanceof Candidate) {
 							Candidate c = (Candidate)item;
-							add.add(new Relation(row.getLead(), new Vertex(c.getText()), new Edge(type, Source.USER)));
+							add.add(new Edge(row.getLead(), new Vertex(c.getText()), type, Origin.USER));
 						}
 					}
 					CreateRelationEvent createRelationEvent = new CreateRelationEvent(add);
@@ -243,30 +247,27 @@ public class TermsGrid implements IsWidget {
 				}
 			}
 		});
-		dropTargetGrid.setOperation(Operation.COPY);
+		dropTarget.setOperation(Operation.COPY);
 		if(createRowContainer != null) {
 			DropTarget dropTargetNewRow = new DropTarget(createRowContainer);
 			dropTargetNewRow.addDropHandler(new DndDropHandler() {
 				@Override
 				public void onDrop(DndDropEvent event) {
-					Candidate c = null;
 					if(event.getData() instanceof List<?>) {
 						List<?> list = (List<?>)event.getData();
 						if(list.size() == 1) {
 							Object item = list.get(0);
-							if(item instanceof Candidate)
-								c = (Candidate)item;
+							if(item instanceof Candidate) {
+								Vertex source = new Vertex(type.getRootLabel());
+								Vertex target = new Vertex(((Candidate)item).getText());
+								Edge relation = new Edge(source, target, type, Origin.USER);
+								CreateRelationEvent createRelationEvent = new CreateRelationEvent(relation);
+								fire(createRelationEvent);
+							}
 						}
 					}
-					
-					if(c != null) {
-						Vertex source = new Vertex(type.getRootLabel());
-						Vertex target = new Vertex(c.getText());
-						Relation relation = new Relation(source, target, new Edge(type, Source.USER));
-						CreateRelationEvent createRelationEvent = new CreateRelationEvent(relation);
-						fire(createRelationEvent);
-					} else {
-						Alerter.showAlert("Failed to create row", "Failed to create row");
+					if(event.getData() instanceof Edge) {
+						createRowFromEdgeDrop((Edge)event.getData());
 					}
 				}
 			});
@@ -281,6 +282,11 @@ public class TermsGrid implements IsWidget {
 		simpleContainer.add(vlc);
 		
 		bindEvents();
+	}
+
+	protected void createRowFromEdgeDrop(Edge edge) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	public void fire(GwtEvent<? extends EventHandler> e) {
@@ -304,10 +310,10 @@ public class TermsGrid implements IsWidget {
 			@Override
 			public void onCreate(CreateRelationEvent event) {
 				if(!event.isEffectiveInModel())
-					for(Relation r : event.getRelations())
+					for(Edge r : event.getRelations())
 						createRelation(r);
 				else
-					for(Relation r : event.getRelations())
+					for(Edge r : event.getRelations())
 						onCreateRelationEffectiveInModel(r);
 			}
 		});
@@ -315,14 +321,23 @@ public class TermsGrid implements IsWidget {
 			@Override
 			public void onRemove(RemoveRelationEvent event) {
 				if(!event.isEffectiveInModel())
-					for(Relation r : event.getRelations())
+					for(Edge r : event.getRelations())
 						removeRelation(r, event.isRecursive());
 				else 
-					for(Relation r : event.getRelations())
+					for(Edge r : event.getRelations())
 						onRemoveRelationEffectiveInModel(r);
 			}
 		});
-		
+		eventBus.addHandler(ReplaceRelationEvent.TYPE, new ReplaceRelationEvent.Handler() {
+			@Override
+			public void onReplace(ReplaceRelationEvent event) {
+				if(!event.isEffectiveInModel()) {
+					replaceRelation(event.getOldRelation(), event.getNewSource());
+				} else {
+					onReplaceRelationEffectiveInModel(event.getOldRelation(), event.getNewSource());
+				}
+			}
+		});
 		/*eventBus.addHandler(RemoveCandidateEvent.TYPE, new RemoveCandidateEvent.Handler() {
 			@Override
 			public void onRemove(RemoveCandidateEvent event) {
@@ -331,7 +346,33 @@ public class TermsGrid implements IsWidget {
 		});*/
 	}
 
-	protected void onRemoveRelationEffectiveInModel(Relation r) {
+	protected void replaceRelation(Edge oldRelation, Vertex newSource) {
+		if(oldRelation.getType().equals(type)) {
+			if(leadRowMap.containsKey(oldRelation.getSrc()) && leadRowMap.containsKey(newSource)) {
+				Row oldRow = leadRowMap.get(oldRelation.getSrc());
+				oldRow.remove(oldRelation);
+				updateRow(oldRow);
+				
+				Row newRow = leadRowMap.get(newSource);
+				try {
+					addAttached(newRow, new Edge(newSource, oldRelation.getDest(), oldRelation.getType(), oldRelation.getOrigin()));
+				} catch (Exception e) {
+					Alerter.showAlert("Failed to replace relation", "Failed to replace relation");
+					return;
+				}
+				
+			} else {
+				Alerter.showAlert("Failed to replace relation", "Failed to replace relation");
+			}
+		}
+	}
+
+	protected void onReplaceRelationEffectiveInModel(Edge oldRelation, Vertex newSource) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	protected void onRemoveRelationEffectiveInModel(Edge r) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -341,7 +382,7 @@ public class TermsGrid implements IsWidget {
 		
 	}
 
-	protected void onCreateRelationEffectiveInModel(Relation r) {
+	protected void onCreateRelationEffectiveInModel(Edge r) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -362,20 +403,20 @@ public class TermsGrid implements IsWidget {
 	}
 	
 	protected void createEdges(OntologyGraph g, Vertex source, Set<String> createdRelations) {
-		for(Relation r : g.getOutRelations(source, type)) {
-			String relationIdentifier = r.getSource().getValue() + " - " + r.getDestination().getValue() + " " + r.getEdge().getType().toString();
+		for(Edge r : g.getOutRelations(source, type)) {
+			String relationIdentifier = r.getSrc().getValue() + " - " + r.getDest().getValue() + " " + r.getType().toString();
 			if(!createdRelations.contains(relationIdentifier)) {
 				createdRelations.add(relationIdentifier);
 				createRelation(r);
-				createEdges(g, r.getDestination(), createdRelations);
+				createEdges(g, r.getDest(), createdRelations);
 			}
 		}
 	}
 
-	protected void removeRelation(Relation r, boolean recursive) {
-		if(r.getEdge().getType().equals(type)) {
-			if(leadRowMap.containsKey(r.getSource())) {
-				Row row = leadRowMap.get(r.getSource());
+	protected void removeRelation(Edge r, boolean recursive) {
+		if(r.getType().equals(type)) {
+			if(leadRowMap.containsKey(r.getSrc())) {
+				Row row = leadRowMap.get(r.getSrc());
 				removeAttached(row, r, recursive);
 			} else {
 				Alerter.showAlert("Failed to remove relation", "Failed to remove relation");
@@ -383,17 +424,17 @@ public class TermsGrid implements IsWidget {
 		}
 	}
 
-	protected void createRelation(Relation r) {
-		if(r.getEdge().getType().equals(type)) {
+	protected void createRelation(Edge r) {
+		if(r.getType().equals(type)) {
 			Row row = null;
-			if(leadRowMap.containsKey(r.getSource())) {
-				row = leadRowMap.get(r.getSource());
+			if(leadRowMap.containsKey(r.getSrc())) {
+				row = leadRowMap.get(r.getSrc());
 			} else {
-				row = new Row(r.getSource());
+				row = new Row(r.getSrc());
 				this.addRow(row);
 			}	
 			try {
-				addAttached(row, new Relation(r.getSource(), r.getDestination(), r.getEdge()));
+				addAttached(row, new Edge(r.getSrc(), r.getDest(), r.getType(), r.getOrigin()));
 			} catch (Exception e) {
 				Alerter.showAlert("Failed to create relation", "Failed to create relation");
 				return;
@@ -417,18 +458,18 @@ public class TermsGrid implements IsWidget {
 	
 	protected void removeRow(Row row, boolean recursive) {
 		if(recursive) {
-			for(Relation relation : row.getAttached()) {
-				if(leadRowMap.containsKey(relation.getDestination())) {
-					Row attachedRow = leadRowMap.get(relation.getDestination());
+			for(Edge relation : row.getAttached()) {
+				if(leadRowMap.containsKey(relation.getDest())) {
+					Row attachedRow = leadRowMap.get(relation.getDest());
 					removeRow(attachedRow, true);
 				}
 			}
 		} else {
 			OntologyGraph graph = ModelController.getCollection().getGraph();
 			Vertex lead = row.getLead();
-			for(Relation r : graph.getInRelations(lead, type)) {
+			for(Edge r : graph.getInRelations(lead, type)) {
 				try {
-					Row targetRow = leadRowMap.get(r.getSource());
+					Row targetRow = leadRowMap.get(r.getSrc());
 					if(!row.getAttached().isEmpty()) {
 						targetRow.add(row.getAttached());
 						updateRow(targetRow);
@@ -452,24 +493,25 @@ public class TermsGrid implements IsWidget {
 			vertexRowMap.remove(v);
 	}*/
 
-	protected void addAttached(Row row, Relation... add) throws Exception {
+	protected void addAttached(Row row, Edge... add) throws Exception {
 		row.add(Arrays.asList(add));
 		updateRow(row);
-		for(Relation r : add) {
+		for(Edge r : add) {
 			//this.addVertexRowMap(r.getDestination(), row);
-			if(!leadRowMap.containsKey(r.getDestination())) {
-				Row addRow = new Row(r.getDestination());
+			if(!leadRowMap.containsKey(r.getDest())) {
+				Row addRow = new Row(r.getDest());
 				this.addRow(addRow);
 			}
 		}
 	}
 	
-	protected void removeAttached(Row row, Relation r, boolean recursive) {
+	protected void removeAttached(Row row, Edge r, boolean recursive) {
 		row.remove(r);
 		updateRow(row);
 		
-		Row targetRow = leadRowMap.get(r.getDestination());
-		removeRow(targetRow, recursive);
+		Row targetRow = leadRowMap.get(r.getDest());
+		if(targetRow != null)
+			removeRow(targetRow, recursive);
 	}
 	
 	protected void updateRow(Row row) {
@@ -486,9 +528,9 @@ public class TermsGrid implements IsWidget {
 		if(leadRowMap.containsKey(v))
 			result.add(leadRowMap.get(v));
 		OntologyGraph g = ModelController.getCollection().getGraph();
-		for(Relation inRelations : g.getInRelations(v, type)) {
-			if(leadRowMap.containsKey(inRelations.getSource())) {
-				result.add(leadRowMap.get(inRelations.getSource()));
+		for(Edge inRelations : g.getInRelations(v, type)) {
+			if(leadRowMap.containsKey(inRelations.getSrc())) {
+				result.add(leadRowMap.get(inRelations.getSrc()));
 			}
 		}
 		return result;

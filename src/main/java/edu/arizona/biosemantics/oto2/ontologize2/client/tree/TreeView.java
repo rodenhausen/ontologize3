@@ -59,6 +59,7 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.event.CreateRelationEven
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.LoadCollectionEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveCandidateEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.RemoveRelationEvent;
+import edu.arizona.biosemantics.oto2.ontologize2.client.event.ReplaceRelationEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.event.SelectTermEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
 import edu.arizona.biosemantics.oto2.ontologize2.client.tree.node.TextTreeNodeProperties;
@@ -69,7 +70,6 @@ import edu.arizona.biosemantics.oto2.ontologize2.shared.ICollectionService;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.ICollectionServiceAsync;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Candidate;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Type;
@@ -182,11 +182,11 @@ public class TreeView extends SimpleContainer {
 			@Override
 			public void onCreate(CreateRelationEvent event) {
 				if(!event.isEffectiveInModel())
-					for(Relation r : event.getRelations()) {
+					for(Edge r : event.getRelations()) {
 						createRelation(r);
 					}
 				else
-					for(Relation r : event.getRelations())
+					for(Edge r : event.getRelations())
 						onCreateRelationEffectiveInModel(r);
 			}
 		});
@@ -194,11 +194,21 @@ public class TreeView extends SimpleContainer {
 			@Override
 			public void onRemove(RemoveRelationEvent event) {
 				if(!event.isEffectiveInModel())
-					for(Relation r : event.getRelations())
+					for(Edge r : event.getRelations())
 						removeRelation(r, event.isRecursive());
 				else
-					for(Relation r : event.getRelations()) 
+					for(Edge r : event.getRelations()) 
 						onRemoveRelationEffectiveInModel(r);
+			}
+		});
+		eventBus.addHandler(ReplaceRelationEvent.TYPE, new ReplaceRelationEvent.Handler() {
+			@Override
+			public void onReplace(ReplaceRelationEvent event) {
+				if(!event.isEffectiveInModel()) {
+					replaceRelation(event.getOldRelation(), event.getNewSource());
+				} else {
+					onReplaceRelationEffectiveInModel(event.getOldRelation(), event.getNewSource());
+				}
 			}
 		});
 		/*eventBus.addHandler(RemoveCandidateEvent.TYPE, new RemoveCandidateEvent.Handler() {
@@ -210,17 +220,37 @@ public class TreeView extends SimpleContainer {
 		});*/
 	}
 	
+	protected void replaceRelation(Edge oldRelation, Vertex newSource) {
+		if(oldRelation.getType().equals(type)) {
+			if(vertexNodeMap.containsKey(oldRelation.getDest()) && vertexNodeMap.containsKey(newSource)) {
+				VertexTreeNode targetNode = vertexNodeMap.get(oldRelation.getDest()).iterator().next();
+				VertexTreeNode newSourceNode = vertexNodeMap.get(newSource).iterator().next();
+				
+				
+				List<TreeNode<VertexTreeNode>> targetNodes = new LinkedList<TreeNode<VertexTreeNode>>();
+				targetNodes.add(store.getSubTree(targetNode));
+				store.remove(targetNode);
+				store.addSubTree(newSourceNode, store.getChildCount(newSourceNode), targetNodes);
+			}
+		}
+	}
+
+	protected void onReplaceRelationEffectiveInModel(Edge relation, Vertex vertex) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	protected void onLoadCollectionEffectiveInModel() {
 		// TODO Auto-generated method stub
 		
 	}
 
-	protected void onRemoveRelationEffectiveInModel(Relation r) {
+	protected void onRemoveRelationEffectiveInModel(Edge r) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	protected void onCreateRelationEffectiveInModel(Relation r) {
+	protected void onCreateRelationEffectiveInModel(Edge r) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -235,9 +265,9 @@ public class TreeView extends SimpleContainer {
 
 
 	protected void createFromVertex(OntologyGraph g, Vertex source) {
-		for(Relation r : g.getOutRelations(source, type)) {
+		for(Edge r : g.getOutRelations(source, type)) {
 			createRelation(r);
-			createFromVertex(g, r.getDestination());
+			createFromVertex(g, r.getDest());
 		}
 	}
 
@@ -249,31 +279,31 @@ public class TreeView extends SimpleContainer {
 		}*/
 	}
 
-	protected void createRelation(Relation r) {
-		if(r.getEdge().getType().equals(type)) {
+	protected void createRelation(Edge r) {
+		if(r.getType().equals(type)) {
 			VertexTreeNode sourceNode = null;
-	 		if(vertexNodeMap.containsKey(r.getSource())) {
-				sourceNode = vertexNodeMap.get(r.getSource()).iterator().next();
+	 		if(vertexNodeMap.containsKey(r.getSrc())) {
+				sourceNode = vertexNodeMap.get(r.getSrc()).iterator().next();
 			} else {
-				sourceNode = new VertexTreeNode(r.getSource());
+				sourceNode = new VertexTreeNode(r.getSrc());
 				add(null, sourceNode);
 			}
-			if(vertexNodeMap.containsKey(r.getDestination())) {
+			if(vertexNodeMap.containsKey(r.getDest())) {
 				Alerter.showAlert("Failed to create relation", "Failed to create relation");
 				return;
 			}
-			VertexTreeNode destinationNode = new VertexTreeNode(r.getDestination());
+			VertexTreeNode destinationNode = new VertexTreeNode(r.getDest());
 			add(sourceNode, destinationNode);
 			if(treeGrid.isRendered())
 				treeGrid.setExpanded(sourceNode, true);
 		}
 	}
 	
-	protected void removeRelation(Relation r, boolean recursive) {
-		if(r.getEdge().getType().equals(type)) {
-			if(vertexNodeMap.containsKey(r.getSource()) && vertexNodeMap.containsKey(r.getDestination())) {
-				VertexTreeNode sourceNode = vertexNodeMap.get(r.getSource()).iterator().next();
-				VertexTreeNode targetNode = vertexNodeMap.get(r.getDestination()).iterator().next();
+	protected void removeRelation(Edge r, boolean recursive) {
+		if(r.getType().equals(type)) {
+			if(vertexNodeMap.containsKey(r.getSrc()) && vertexNodeMap.containsKey(r.getDest())) {
+				VertexTreeNode sourceNode = vertexNodeMap.get(r.getSrc()).iterator().next();
+				VertexTreeNode targetNode = vertexNodeMap.get(r.getDest()).iterator().next();
 				if(recursive) {
 					remove(targetNode);
 				} else {

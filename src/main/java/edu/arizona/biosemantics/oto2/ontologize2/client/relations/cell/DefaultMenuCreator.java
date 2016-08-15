@@ -23,10 +23,9 @@ import edu.arizona.biosemantics.oto2.ontologize2.client.event.SelectTermEvent;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid;
 import edu.arizona.biosemantics.oto2.ontologize2.client.relations.TermsGrid.Row;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.Relation;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge;
 import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Vertex;
-import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Source;
+import edu.arizona.biosemantics.oto2.ontologize2.shared.model.OntologyGraph.Edge.Origin;
 
 public class DefaultMenuCreator implements LeadCell.MenuCreator {
 
@@ -56,7 +55,7 @@ public class DefaultMenuCreator implements LeadCell.MenuCreator {
 					@Override
 					public void onSelect(SelectEvent event) {
 						termsGrid.fire(new CreateRelationEvent(
-								new Relation(row.getLead(), new Vertex(box.getTextField().getText()), new Edge(termsGrid.getType(), Source.USER))));
+								new Edge(row.getLead(), new Vertex(box.getTextField().getText()), termsGrid.getType(), Origin.USER)));
 					}
 				});
 			}
@@ -68,9 +67,9 @@ public class DefaultMenuCreator implements LeadCell.MenuCreator {
 			public void onSelection(SelectionEvent<Item> event) {
 				OntologyGraph g = ModelController.getCollection().getGraph();
 				Vertex targetVertex = row.getLead();
-				for(final Relation r : g.getOutRelations(targetVertex, termsGrid.getType())) {
-					if(g.getInRelations(r.getDestination(), termsGrid.getType()).size() <= 1) {
-						if(g.getOutRelations(r.getDestination(), termsGrid.getType()).isEmpty()) {
+				for(final Edge r : g.getOutRelations(targetVertex, termsGrid.getType())) {
+					if(g.getInRelations(r.getDest(), termsGrid.getType()).size() <= 1) {
+						if(g.getOutRelations(r.getDest(), termsGrid.getType()).isEmpty()) {
 							eventBus.fireEvent(new RemoveRelationEvent(false, r));
 						} else {
 							doAskForRecursiveRemoval(r);
@@ -118,16 +117,16 @@ public class DefaultMenuCreator implements LeadCell.MenuCreator {
 		return menu;
 	}
 	
-	protected void doAskForRecursiveRemoval(final Relation relation) {
+	protected void doAskForRecursiveRemoval(final Edge relation) {
 		OntologyGraph g = ModelController.getCollection().getGraph();
 		List<Vertex> targets = new LinkedList<Vertex>();
-		for(Relation r : g.getOutRelations(relation.getDestination(), termsGrid.getType())) 
-			targets.add(r.getDestination());
+		for(Edge r : g.getOutRelations(relation.getDest(), termsGrid.getType())) 
+			targets.add(r.getDest());
 		final MessageBox box = Alerter.showYesNoCancelConfirm("Remove " + termsGrid.getType().getTargetLabel(), 
-				"You are about to remove " + termsGrid.getType().getTargetLabel() + "<i>" + relation.getDestination() + "</i>"
-				+ " from <i>" + relation.getSource() + "</i>.\n" +
-				"Do you want to remove all " + termsGrid.getType().getTargetLabelPlural() + " of <i>" + relation.getDestination() + "</i>" +
-				" or make them instead a " + termsGrid.getType().getTargetLabel() + " of <i>" + relation.getSource() + "</i>?");
+				"You are about to remove " + termsGrid.getType().getTargetLabel() + "<i>" + relation.getDest() + "</i>"
+				+ " from <i>" + relation.getSrc() + "</i>.\n" +
+				"Do you want to remove all " + termsGrid.getType().getTargetLabelPlural() + " of <i>" + relation.getDest() + "</i>" +
+				" or make them instead a " + termsGrid.getType().getTargetLabel() + " of <i>" + relation.getSrc() + "</i>?");
 		box.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler() {
 			@Override
 			public void onSelect(SelectEvent event) {
